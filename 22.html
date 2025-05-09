@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>加权方块消除游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+
+        #game-container {
+            display: flex;
+            gap: 30px;
+            padding: 20px;
+            background: #2a2a2a;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.3);
+        }
+
+        #sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 200px;
+        }
+
+        #score {
+            font-size: 24px;
+            padding: 10px;
+            background: #333;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .preview-block {
+            width: 180px;
+            height: 180px;
+            border: 2px solid #444;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            padding: 5px;
+            background: #2a2a2a;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #map {
+            display: grid;
+            grid-template-columns: repeat(10, 40px);
+            grid-template-rows: repeat(10, 40px);
+            gap: 0;
+            background: #333;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .cell {
+            width: 40px;
+            height: 40px;
+            background: #444;
+            transition: all 0.3s;
+        }
+
+        .color-1 { background: #FF1744; }
+        .color-2 { background: #00E676; }
+        .color-3 { background: #2979FF; }
+        .color-4 { background: #FF9100; }
+
+        .eliminating {
+            animation: eliminate 0.5s ease-out;
+        }
+
+        @keyframes eliminate {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        #game-over {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            padding: 30px 50px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 28px;
+        }
+
+        .selected-block {
+            border-color: gold !important;
+            box-shadow: 0 0 15px rgba(255,215,0,0.3);
+        }
+        .score-popup {
+            position: fixed;
+            color: gold;
+            font-size: 20px;
+            animation: floatUp 1s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-100px); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="sidebar">
+            <div id="score">得分: 0</div>
+            <div id="preview"></div>
+        </div>
+        <div id="map"></div>
+    </div>
+    <div id="game-over">游戏结束!</div>
+
+    <script>
+        let score = 0;
+        const MAP_SIZE = 10;
+        const COLORS = 4;
+        let map = Array(MAP_SIZE).fill().map(() => Array(MAP_SIZE).fill(0));
+        let previewBlocks = [];
+        let selectedBlock = null;
+
+        // 带权重的方块定义
+        const BLOCKS = [
+            //常规区
+            {cells:[[2, 2]],center:[2,2],weight:80},
+            {cells:[[2, 1], [2, 2], [1, 2]],center:[2,2],weight:20},
+            {cells:[[2, 1], [2, 2], [3, 2]],center:[2,2],weight:20},
+            {cells:[[3, 2], [2, 2], [2, 3]],center:[2,2],weight:20},
+            {cells:[[2, 3], [2, 2], [1, 2]],center:[2,2],weight:20},
+            {cells:[[1, 2], [2, 2], [3, 2]],center:[2,2],weight:30},
+            {cells:[[2, 1], [2, 2], [2, 3]],center:[2,2],weight:30},
+            {cells:[[1, 2], [2, 2]],center:[2,2],weight:60},
+            {cells:[[2, 1], [2, 2]],center:[2,2],weight:60},
+            {cells:[[1, 1], [2, 2]],center:[2,2],weight:10},
+            {cells:[[1, 3], [2, 2]],center:[2,2],weight:10},
+            {cells:[[0, 2], [1, 2], [2, 2], [3, 2]],center:[2,2],weight:30},
+            {cells:[[2, 0], [2, 1], [2, 2], [2, 3]],center:[2,2],weight:30},
+            {cells:[[1, 1], [2, 1], [1, 2], [2, 2]],center:[2,2],weight:45},
+            {cells:[[2, 0], [2, 1], [2, 2], [2, 3], [2, 4]],center:[2,2],weight:30},
+            {cells:[[0, 2], [1, 2], [2, 2], [3, 2], [4, 2]],center:[2,2],weight:30},
+            {cells:[[1, 1], [2, 1], [3, 1], [1, 2], [2, 2], [3, 2], [1, 3], [2, 3], [3, 3]],center:[2,2],weight:10},
+            {cells:[[0, 2], [1, 2], [2, 2], [2, 3], [2, 4]],center:[2,2],weight:5},
+            {cells:[[0, 2], [1, 2], [2, 2], [2, 1], [2, 0]],center:[2,2],weight:5},
+            {cells:[[2, 0], [2, 1], [2, 2], [3, 2], [4, 2]],center:[2,2],weight:5},
+            {cells:[[2, 4], [2, 3], [2, 2], [3, 2], [4, 2]],center:[2,2],weight:5},
+            //精英区
+            {cells:[[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [0, 1], [1, 1], [2, 1], [3, 1], [4, 1], [0, 2], [1, 2], [2, 2], [3, 2], [4, 2], [0, 3], [1, 3], [2, 3], [3, 3], [4, 3], [0, 4], [1, 4], [2, 4], [3, 4], [4, 4]],center:[2,2],weight:0.5},
+            {cells:[[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [4, 0], [3, 1], [1, 3], [0, 4]],center:[2,2],weight:0.5},
+            {cells:[[0, 0], [2, 0], [4, 0], [1, 1], [3, 1], [0, 2], [2, 2], [4, 2], [1, 3], [3, 3], [0, 4], [2, 4], [4, 4]],center:[2,2],weight:0.5},
+            {cells:[[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [4, 1], [4, 2], [4, 3], [4, 4], [3, 4], [2, 4], [1, 4], [0, 4], [0, 3], [0, 2], [0, 1]],center:[2,2],weight:0.5},
+            {cells:[[2, 0], [2, 1], [2, 2], [2, 3], [2, 4], [0, 2], [1, 2], [3, 2], [4, 2]],center:[2,2],weight:0.5},
+            {cells:[[1, 1], [2, 1], [3, 1], [3, 2], [3, 3], [2, 3], [1, 3], [1, 2]],center:[2,2],weight:0.5},
+            {cells:[[0, 0], [1, 0], [2, 0], [3, 0], [0, 1], [1, 1], [2, 1], [3, 1], [0, 2], [1, 2], [2, 2], [3, 2], [0, 3], [1, 3], [2, 3], [3, 3]],center:[2,2],weight:0.5},
+            {cells:[[1, 0], [1, 1], [1, 2], [1, 3], [1, 4], [3, 0], [3, 1], [3, 2], [3, 3], [3, 4], [0, 1], [2, 1], [4, 1], [0, 3], [2, 3], [4, 3]],center:[2,2],weight:0.5},
+            {cells:[[3, 0], [2, 0], [1, 0], [1, 1], [1, 2], [1, 3], [1, 4], [2, 4], [3, 4], [3, 3], [3, 2], [2, 2]],center:[2,2],weight:0.5},
+            {cells:[[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [4, 1], [4, 2], [4, 3], [4, 4], [3, 4], [2, 4], [1, 4], [0, 4], [0, 3], [0, 2], [0, 1], [1, 2], [2, 2], [3, 2], [2, 1], [2, 3]],center:[2,2],weight:0.5},
+            {cells:[[0, 0], [1, 0], [2, 0], [2, 1], [2, 2], [2, 3], [2, 4], [3, 4], [4, 4], [4, 0], [4, 1], [4, 2], [3, 2], [1, 2], [0, 2], [0, 3], [0, 4]],center:[2,2],weight:0.5},
+            {cells:[[2, 0], [1, 1], [2, 1], [3, 1], [0, 2], [1, 2], [2, 2], [3, 2], [4, 2], [1, 3], [2, 3], [3, 3], [2, 4]],center:[2,2],weight:0.5},
+            {cells:[[1, 2], [2, 2], [3, 2], [2, 1], [2, 3]],center:[2,2],weight:0.5},
+            {cells:[[1, 1], [2, 1], [3, 1], [2, 0], [2, 2], [1, 3], [2, 3], [3, 3], [0, 4], [1, 4], [2, 4], [3, 4], [4, 4]],center:[2,2],weight:0.5},
+            {cells:[[0, 0], [4, 0], [2, 2], [0, 4], [4, 4]],center:[2,2],weight:0.5},
+            {cells:[[1, 1], [3, 1], [0, 3], [1, 4], [2, 4], [3, 4], [4, 3]],center:[2,2],weight:0.5},
+        ];
+
+        // 加权随机函数
+        function getRandomBlockByWeight() {
+            const totalWeight = BLOCKS.reduce((sum, block) => sum + block.weight, 0);
+            const random = Math.random() * totalWeight;
+            let current = 0;
+            
+            for (const block of BLOCKS) {
+                current += block.weight;
+                if (random < current) {
+                    return block;
+                }
+            }
+            return BLOCKS[0];
+        }
+
+        function init() {
+            initMap();
+            generatePreview();
+            updateScore(0);
+        }
+
+        function initMap() {
+            const container = document.getElementById('map');
+            container.innerHTML = '';
+            
+            for (let y = 0; y < MAP_SIZE; y++) {
+                for (let x = 0; x < MAP_SIZE; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    cell.addEventListener('click', placeBlock);
+                    container.appendChild(cell);
+                }
+            }
+        }
+
+        function generatePreview() {
+            const preview = document.getElementById('preview');
+            preview.innerHTML = '';
+            
+            while(previewBlocks.length < 3) {
+                const newBlock = JSON.parse(JSON.stringify(getRandomBlockByWeight()));
+                newBlock.color = Math.floor(Math.random() * COLORS) + 1;
+                newBlock.used = false;
+                previewBlocks.push(newBlock);
+            }
+
+            previewBlocks.forEach((block, index) => {
+                const blockDiv = document.createElement('div');
+                blockDiv.className = `preview-block ${block.used ? 'used' : ''}`;
+                blockDiv.innerHTML = '';
+                
+                // 创建5x5预览网格
+                for (let y = 0; y < 5; y++) {
+                    for (let x = 0; x < 5; x++) {
+                        const cell = document.createElement('div');
+                        cell.style.border = '1px solid rgba(255,255,255,0.1)';
+                        if (block.cells.some(pos => pos[0] === x && pos[1] === y)) {
+                            cell.classList.add(`color-${block.color}`);
+                        }
+                        blockDiv.appendChild(cell);
+                    }
+                }
+
+                if (!block.used) {
+                    blockDiv.addEventListener('click', () => {
+                        document.querySelectorAll('.preview-block').forEach(b => 
+                            b.style.borderColor = '#444');
+                        blockDiv.style.borderColor = 'gold';
+                        selectedBlock = block;
+                    });
+                } else {
+                    blockDiv.style.opacity = '0.5';
+                }
+
+                preview.appendChild(blockDiv);
+            });
+        }
+
+        function placeBlock(e) {
+            if (!selectedBlock || selectedBlock.used) return;
+
+            const baseX = parseInt(e.target.dataset.x);
+            const baseY = parseInt(e.target.dataset.y);
+            const offsetX = selectedBlock.center[0];
+            const offsetY = selectedBlock.center[1];
+
+            // 检查放置位置
+            const canPlace = selectedBlock.cells.every(pos => {
+                const x = baseX + (pos[0] - offsetX);
+                const y = baseY + (pos[1] - offsetY);
+                return x >= 0 && x < MAP_SIZE && 
+                       y >= 0 && y < MAP_SIZE && 
+                       map[y][x] === 0;
+            });
+
+            if (canPlace) {
+                // 放置方块
+                selectedBlock.cells.forEach(pos => {
+                    const x = baseX + (pos[0] - offsetX);
+                    const y = baseY + (pos[1] - offsetY);
+                    map[y][x] = selectedBlock.color;
+                    const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+                    cell.className = `cell color-${selectedBlock.color}`;
+                });
+
+                // 标记为已使用并更新分数
+                selectedBlock.used = true;
+                updateScore(selectedBlock.cells.length);
+                
+                // 替换已使用的方块
+                const usedIndex = previewBlocks.findIndex(b => b === selectedBlock);
+                if (usedIndex > -1) {
+                    const newBlock = JSON.parse(JSON.stringify(getRandomBlockByWeight()));
+                    newBlock.color = Math.floor(Math.random() * COLORS) + 1;
+                    newBlock.used = false;
+                    previewBlocks[usedIndex] = newBlock;
+                }
+                
+                generatePreview();
+                checkLines();
+                checkGameOver();
+            }
+        }
+
+        function checkLines() {
+            const eliminated = { rows: new Set(), cols: new Set() };
+
+            // 检查行
+            for (let y = 0; y < MAP_SIZE; y++) {
+                if (map[y].every(cell => cell !== 0)) {
+                    eliminated.rows.add(y);
+                }
+            }
+
+            // 检查列
+            for (let x = 0; x < MAP_SIZE; x++) {
+                const col = [];
+                for (let y = 0; y < MAP_SIZE; y++) col.push(map[y][x]);
+                if (col.every(cell => cell !== 0)) eliminated.cols.add(x);
+            }
+
+            // 计算得分
+            const comboScore = (eliminated.rows.size + eliminated.cols.size) * 10;
+            updateScore(comboScore);
+
+            // 执行消除
+            eliminateBlocks(eliminated);
+        }
+
+        function eliminateBlocks(eliminated) {
+            // 行消除
+            eliminated.rows.forEach(y => {
+                for (let x = 0; x < MAP_SIZE; x++) {
+                    const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+                    cell.classList.add('eliminating');
+                    map[y][x] = 0;
+                }
+            });
+
+            // 列消除
+            eliminated.cols.forEach(x => {
+                for (let y = 0; y < MAP_SIZE; y++) {
+                    const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+                    cell.classList.add('eliminating');
+                    map[y][x] = 0;
+                }
+            });
+
+            // 更新视图
+            setTimeout(() => {
+                document.querySelectorAll('.cell').forEach(cell => 
+                    cell.classList.remove('eliminating'));
+                updateMapView();
+            }, 500);
+        }
+
+        function updateMapView() {
+            document.querySelectorAll('.cell').forEach(cell => {
+                const x = parseInt(cell.dataset.x);
+                const y = parseInt(cell.dataset.y);
+                cell.className = `cell${map[y][x] ? ` color-${map[y][x]}` : ''}`;
+            });
+        }
+
+        function updateScore(points) {
+            score += points;
+            document.getElementById('score').textContent = `得分: ${score}`;
+            showScorePopup(points);
+        }
+
+        function showScorePopup(points) {
+            const popup = document.createElement('div');
+            popup.className = 'score-popup';
+            popup.textContent = `+${points}`;
+            popup.style.left = `${Math.random() * 80 + 10}%`;
+            document.body.appendChild(popup);
+            setTimeout(() => popup.remove(), 1000);
+        }
+
+        function checkGameOver() {
+            const canPlace = previewBlocks.some(block => {
+                if (block.used) return false;
+                for (let y = 0; y < MAP_SIZE; y++) {
+                    for (let x = 0; x < MAP_SIZE; x++) {
+                        const valid = block.cells.every(pos => {
+                            const dx = x + (pos[0] - block.center[0]);
+                            const dy = y + (pos[1] - block.center[1]);
+                            return dx >= 0 && dx < MAP_SIZE && 
+                                   dy >= 0 && dy < MAP_SIZE && 
+                                   map[dy][dx] === 0;
+                        });
+                        if (valid) return true;
+                    }
+                }
+                return false;
+            });
+
+            if (!canPlace) {
+                document.getElementById('game-over').style.display = 'block';
+            }
+        }
+
+        // 初始化游戏
+        init();
+    </script>
+</body>
+</html>
