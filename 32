@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>修复版消灭星星</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        input {
+            background-color: #2d2d2d;
+            color: var(--text-color);
+            border: 1px solid #444;
+            margin: 5px;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .game-container { 
+            position: relative;
+            margin: 20px 0;
+            background: #000000;
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .block {
+            position: absolute;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            border: 1px solid rgba(255,255,255,0.15);
+            cursor: pointer;
+            box-sizing: border-box;
+            border-radius: 4px;
+            opacity: 0.85;
+        }
+        .wild {
+            background: linear-gradient(45deg, 
+                #ff0000, #fffb00, #05ff00, 
+                #00ffd5, #0500ff, #ff00dd);
+            background-size: 600% 600%;
+            animation: rainbow 3s ease infinite;
+        }
+        @keyframes rainbow {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+        .score-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .score-number {
+            position: absolute;
+            color: #FFD700;
+            font-weight: 900;
+            font-size: 16px;
+            text-shadow: 0 0 5px rgba(255,215,0,0.5);
+            animation: floatUp 0.8s ease-out forwards;
+            opacity: 1;
+        }
+        @keyframes floatUp {
+            0% { transform: translate(0, 15px) scale(1); opacity: 1; }
+            70% { transform: translate(0, -25px) scale(1.2); opacity: 1; }
+            100% { transform: translate(0, -60px) scale(0.8); opacity: 0; }
+        }
+        .controls { 
+            margin: 15px 0;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        button { 
+            padding: 8px 20px;
+            cursor: pointer;
+            background: #388E3C;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+        #score {
+            color: #FFD700;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #gameOver {
+            color: #FF5252;
+            font-size: 28px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255,82,82,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <label>尺寸：<input type="number" id="size" value="8" min="5"></label>
+        <label>颜色数：<input type="number" id="colors" value="5" min="2" max="10"></label>
+        <label>万能方块：<input type="number" id="wildcards" value="2" min="0"></label>
+        <button id="generate">生成新游戏</button>
+        <div>得分：<span id="score">0</span></div>
+        <div id="gameOver" style="display:none;">游戏结束！</div>
+    </div>
+    <div class="game-container" id="gameArea"></div>
+    <div class="score-layer" id="scoreLayer"></div>
+
+    <script>
+        let grid = [];
+        let size = 8, colors = 5, wildcards = 2, blockSize = 35;
+        let score = 0;
+        let isAnimating = false;
+
+        document.getElementById('generate').addEventListener('click', initGame);
+
+        function initGame() {
+            size = parseInt(document.getElementById('size').value) || 8;
+            colors = parseInt(document.getElementById('colors').value) || 5;
+            wildcards = parseInt(document.getElementById('wildcards').value) || 0;
+            blockSize = 35;
+            score = 0;
+            document.getElementById('score').textContent = 0;
+            createGrid();
+            renderGrid();
+            document.getElementById('gameOver').style.display = 'none';
+        }
+
+        function createGrid() {
+            grid = Array.from({length: size}, () => Array(size).fill(-2));
+            
+            // 生成普通方块
+            for(let r = 0; r < size; r++) {
+                for(let c = 0; c < size; c++) {
+                    grid[r][c] = Math.floor(Math.random() * colors);
+                }
+            }
+            
+            // 放置万能方块（覆盖普通方块）
+            let placed = 0;
+            while(placed < wildcards && placed < size*size) {
+                const r = Math.floor(Math.random() * size);
+                const c = Math.floor(Math.random() * size);
+                if(grid[r][c] !== -1) {
+                    grid[r][c] = -1;
+                    placed++;
+                }
+            }
+        }
+
+        function renderGrid() {
+            const container = document.getElementById('gameArea');
+            container.style.width = size * blockSize + 'px';
+            container.style.height = size * blockSize + 'px';
+            container.innerHTML = '';
+            
+            grid.forEach((row, i) => {
+                row.forEach((color, j) => {
+                    if(color === null) return;
+                    const block = document.createElement('div');
+                    block.className = 'block' + (color === -1 ? ' wild' : '');
+                    block.style.width = blockSize + 'px';
+                    block.style.height = blockSize + 'px';
+                    block.style.left = (j * blockSize) + 'px';
+                    block.style.top = (i * blockSize) + 'px';
+                    if(color >= 0) {
+                        block.style.backgroundColor = `hsla(${(360/colors)*color}, 70%, 50%, 0.8)`;
+                    }
+                    block.setAttribute('data-row', i);
+                    block.setAttribute('data-col', j);
+                    block.addEventListener('click', handleClick);
+                    container.appendChild(block);
+                });
+            });
+        }
+
+        async function handleClick(e) {
+            if (isAnimating) return;
+            isAnimating = true;
+            
+            const row = parseInt(e.target.getAttribute('data-row'));
+            const col = parseInt(e.target.getAttribute('data-col'));
+            let color = grid[row][col];
+            if(color === null) {
+                isAnimating = false;
+                return;
+            }
+
+            // 获取目标颜色（万能方块视为当前颜色）
+            const targetColor = color === -1 ? 'wild' : color;
+            const { visited, count } = findConnected(row, col, targetColor);
+            
+            if (count < 2) {
+                isAnimating = false;
+                return;
+            }
+
+            const blocksToRemove = getBlocksToRemove(visited);
+            await animateDestruction(blocksToRemove);
+            applyPhysics();
+            await animatePhysics();
+            
+            renderGrid();
+            updateScore(count);
+            
+            if (checkGameOver()) {
+                document.getElementById('gameOver').style.display = 'block';
+            }
+            isAnimating = false;
+        }
+
+        function findConnected(row, col, target) {
+            const visited = Array.from({length: size}, () => Array(size).fill(false));
+            const queue = [{row, col}];
+            visited[row][col] = true;
+            let count = 0;
+
+            while (queue.length) {
+                const {row: r, col: c} = queue.shift();
+                count++;
+                
+                [[-1,0], [1,0], [0,-1], [0,1]].forEach(([dr, dc]) => {
+                    const nr = r + dr, nc = c + dc;
+                    if(nr >= 0 && nr < size && nc >= 0 && nc < size && !visited[nr][nc]) {
+                        const cell = grid[nr][nc];
+                        const isMatch = (target === 'wild') ? 
+                            (cell === -1) : 
+                            (cell === target || cell === -1);
+                        
+                        if(isMatch) {
+                            visited[nr][nc] = true;
+                            queue.push({row: nr, col: nc});
+                        }
+                    }
+                });
+            }
+            return { visited, count };
+        }
+
+        function getBlocksToRemove(visited) {
+            return Array.from(document.getElementsByClassName('block'))
+                .filter(block => {
+                    const r = parseInt(block.getAttribute('data-row'));
+                    const c = parseInt(block.getAttribute('data-col'));
+                    return visited[r][c];
+                });
+        }
+
+        async function animateDestruction(blocks) {
+            return new Promise(resolve => {
+                let completed = 0;
+                blocks.forEach((block, index) => {
+                    const x = parseInt(block.style.left) + blockSize/2;
+                    const y = parseInt(block.style.top) + blockSize/2;
+                    
+                    setTimeout(() => {
+                        block.style.transform = 'scale(0) rotate(360deg)';
+                        block.style.opacity = '0';
+                        showNumber(x, y + 15, 5 + index * 10);
+                        // 确保立即更新网格状态
+                        grid[parseInt(block.dataset.row)][parseInt(block.dataset.col)] = null;
+                    }, index * 50);
+
+                    block.addEventListener('transitionend', () => {
+                        if (++completed === blocks.length) resolve();
+                    }, { once: true });
+                });
+            });
+        }
+
+        function applyPhysics() {
+            // 垂直下落修正
+            const verticalGrid = Array.from({length: size}, () => Array(size).fill(null));
+            for(let c = 0; c < size; c++) {
+                let writeRow = size - 1;
+                for(let r = size - 1; r >= 0; r--) {
+                    if(grid[r][c] !== null) {
+                        verticalGrid[writeRow][c] = grid[r][c];
+                        writeRow--;
+                    }
+                }
+            }
+
+            // 水平左移修正
+            const horizontalGrid = Array.from({length: size}, () => []);
+            let writeCol = 0;
+            for(let c = 0; c < size; c++) {
+                if(verticalGrid.some(row => row[c] !== null)) {
+                    for(let r = 0; r < size; r++) {
+                        horizontalGrid[r][writeCol] = verticalGrid[r][c];
+                    }
+                    writeCol++;
+                }
+            }
+
+            // 填充右侧空白
+            horizontalGrid.forEach(row => {
+                while(row.length < size) row.push(null);
+            });
+
+            // 更新网格引用
+            grid = horizontalGrid.map(row => [...row]);
+        }
+
+        async function animatePhysics() {
+            const blocks = document.getElementsByClassName('block');
+            return new Promise(resolve => {
+                let moved = 0;
+                Array.from(blocks).forEach(block => {
+                    const newRow = parseInt(block.dataset.row);
+                    const newCol = parseInt(block.dataset.col);
+                    const newX = newCol * blockSize;
+                    const newY = newRow * blockSize;
+                    
+                    if(parseInt(block.style.left) !== newX || parseInt(block.style.top) !== newY) {
+                        moved++;
+                        block.style.transition = 'all 0.3s ease-out';
+                        block.style.left = newX + 'px';
+                        block.style.top = newY + 'px';
+                        
+                        block.addEventListener('transitionend', () => {
+                            if(--moved === 0) resolve();
+                        }, { once: true });
+                    }
+                });
+                
+                if(moved === 0) resolve();
+            });
+        }
+
+        function checkGameOver() {
+            for(let r = 0; r < size; r++) {
+                for(let c = 0; c < size; c++) {
+                    if(grid[r][c] === null) continue;
+                    const current = grid[r][c];
+                    const right = (c < size-1) ? grid[r][c+1] : null;
+                    const down = (r < size-1) ? grid[r+1][c] : null;
+                    
+                    if(right !== null && (current === right || right === -1)) return false;
+                    if(down !== null && (current === down || down === -1)) return false;
+                }
+            }
+            return true;
+        }
+
+        function updateScore(points) {
+            let total = 0;
+            for(let i = 0; i < points; i++) {
+                total += 5 + i * 10;
+            }
+            score += total;
+            document.getElementById('score').textContent = score;
+        }
+
+        function showNumber(x, y, number) {
+            const num = document.createElement('div');
+            num.className = 'score-number';
+            num.textContent = number;
+            num.style.left = x + 'px';
+            num.style.top = y + 'px';
+            document.getElementById('scoreLayer').appendChild(num);
+            setTimeout(() => num.remove(), 800);
+        }
+
+        initGame();
+    </script>
+</body>
+</html>
