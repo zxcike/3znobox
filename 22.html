@@ -74,10 +74,14 @@
             transition: all 0.3s;
         }
 
-        .color-1 { background: #FF1744; }
-        .color-2 { background: #00E676; }
-        .color-3 { background: #2979FF; }
-        .color-4 { background: #FF9100; }
+        .color-1 { background: #FF1744; } /* 红 */
+        .color-2 { background: #00E676; } /* 绿 */
+        .color-3 { background: #2979FF; } /* 蓝 */
+        .color-4 { background: #FF9100; } /* 橙 */
+        .color-5 { background: #D500F9; } /* 紫 */
+        .color-6 { background: #FFEA00; } /* 黄 */
+        .color-7 { background: #00B0FF; } /* 浅蓝 */
+        .color-8 { background: #76FF03; } /* 青柠 */
 
         .eliminating {
             animation: eliminate 0.5s ease-out;
@@ -133,7 +137,7 @@
     <script>
         let score = 0;
         const MAP_SIZE = 10;
-        const COLORS = 4;
+        const COLORS = 8;
         let map = Array(MAP_SIZE).fill().map(() => Array(MAP_SIZE).fill(0));
         let previewBlocks = [];
         let selectedBlock = null;
