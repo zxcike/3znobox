@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扑克牌游戏模拟器 - 优化展示版</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #fff;
+            padding: 20px;
+            min-height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: rgba(0, 20, 40, 0.85);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            color: #ffd700;
+        }
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0, 50, 100, 0.6);
+            border-radius: 10px;
+            font-size: 1.2rem;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+        }
+        .card-area {
+            background: rgba(50, 60, 70, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            min-height: 400px;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #4caf50;
+        }
+        .hand {
+            display: flex;
+            padding: 15px;
+            min-height: 160px;
+            position: relative;
+            align-items: flex-start;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            gap: 2px;
+        }
+        .card-container {
+            position: relative;
+            width: 80px;
+            height: 120px;
+            margin-right: -40px; /* 只覆盖一半宽度 */
+            transition: all 0.5s ease;
+            cursor: pointer;
+            z-index: 1;
+            flex-shrink: 0;
+        }
+        .card-container:hover {
+            z-index: 10;
+            transform: translateY(-15px);
+        }
+        .card {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            padding: 3px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            position: relative;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .card.selected {
+            border: 2px solid #ffd700;
+            transform: translateY(-10px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+        }
+        .selected-tag {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffd700;
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            z-index: 20;
+        }
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            padding: 3px;
+        }
+        .card-front {
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+        }
+        .card-back {
+            background: linear-gradient(45deg, #d80000, #ff4500);
+            transform: rotateY(180deg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .card-back-pattern {
+            width: 80%;
+            height: 80%;
+            background: repeating-linear-gradient(
+                135deg,
+                #fff,
+                #fff 8px,
+                #ff0000 8px,
+                #ff0000 16px
+            );
+            border-radius: 4px;
+        }
+        .card-top {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+        }
+        .card-bottom {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: flex-end;
+            height: 100%;
+            transform: rotate(180deg);
+        }
+        .card-value {
+            font-size: 0.9rem;
+            font-weight: bold;
+            line-height: 1;
+            color: #000;
+        }
+        .mini-suit {
+            font-size: 0.8rem;
+            line-height: 1;
+        }
+        .card-center {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .card-suit {
+            font-size: 1.8rem;
+            color: #000;
+        }
+        .joker {
+            background: linear-gradient(145deg, #0f2027, #203a43, #2c5364);
+            color: white;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
+        .joker .card-value {
+            font-size: 0.9rem;
+            color: #ffd700;
+        }
+        .joker .card-suit {
+            font-size: 1.2rem;
+        }
+        .diamonds .mini-suit, .diamonds .card-suit, .hearts .mini-suit, .hearts .card-suit {
+            color: #e74c3c;
+        }
+        .spades .mini-suit, .spades .card-suit, .clubs .mini-suit, .clubs .card-suit {
+            color: #2c3e50;
+        }
+        .hand-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 14px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+            min-width: 130px;
+        }
+        .btn-play {
+            background: linear-gradient(to right, #ff8c00, #ff6600);
+            color: white;
+        }
+        .btn-discard {
+            background: linear-gradient(to right, #3498db, #2980b9);
+            color: white;
+        }
+        .btn-skip {
+            background: linear-gradient(to right, #27ae60, #2ecc71);
+            color: white;
+        }
+        .btn-flip {
+            background: linear-gradient(to right, #9b59b6, #8e44ad);
+            color: white;
+        }
+        .btn-restart {
+            background: linear-gradient(to right, #2c3e50, #34495e);
+            color: white;
+        }
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        button:disabled {
+            background: linear-gradient(to right, #888, #666);
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .round-progress {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        .round {
+            text-align: center;
+            flex: 1;
+            padding: 8px;
+            background: rgba(50, 100, 150, 0.5);
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        .round.active {
+            background: rgba(0, 150, 100, 0.8);
+            font-weight: bold;
+        }
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .hand-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .hand-info {
+            font-size: 1.1rem;
+            background: rgba(255,255,255,0.1);
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        .hand::-webkit-scrollbar {
+            height: 8px;
+        }
+        .hand::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+        .hand::-webkit-scrollbar-thumb {
+            background: #ff8c00;
+            border-radius: 10px;
+        }
+        .discard-actions {
+            display: flex;
+            gap: 15px;
+        }
+        .game-status {
+            background: linear-gradient(to right, #27ae60, #2ecc71);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 15px 0;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .card-counter {
+            margin-top: 25px;
+            background: rgba(40, 40, 60, 0.8);
+            border-radius: 10px;
+            padding: 15px;
+        }
+        .counter-header {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            color: #4caf50;
+        }
+        .counter-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .counter-suit {
+            text-align: center;
+            min-width: 100px;
+        }
+        .suit-name {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+            color: #4caf50;
+        }
+        .suit-count {
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+        .hint-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #ffd700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>扑克牌游戏模拟器</h1>
+            <p>优化展示功能 - 选中的牌移到右侧展示</p>
+        </header>
+        
+        <div class="game-info">
+            <div>当前轮次：<span id="current-round">1</span>/6</div>
+            <div>本轮牌数：<span id="current-round-cards">12</span>张</div>
+            <div>牌堆剩余：<span id="remaining-cards">108</span>张</div>
+        </div>
+        
+        <div class="card-area">
+            <div class="hand-header">
+                <h2>你的手牌</h2>
+                <div class="hand-info">已选中 <span id="selected-count">0</span> 张 | 状态: <span id="game-state">出牌</span></div>
+            </div>
+            
+            <div class="game-status">
+                <span id="game-message">第1轮 - 出牌阶段</span>
+            </div>
+            
+            <div class="hand" id="hand">
+                <!-- 手牌区域将由JS动态生成 -->
+            </div>
+            
+            <div class="hint-box">
+                <p>💡 提示：选中的牌被移到右侧，未选中的牌被翻面并移到左侧</p>
+            </div>
+            
+            <div class="hand-buttons">
+                <button id="flip-cards-btn" class="btn-flip">翻转未选牌</button>
+                <button id="play-cards-btn" class="btn-play">出牌</button>
+                <div class="discard-actions">
+                    <button id="discard-btn" class="btn-discard" disabled>弃牌</button>
+                    <button id="skip-discard-btn" class="btn-skip" disabled>不弃牌</button>
+                </div>
+                <button id="restart-btn" class="btn-restart">重新开始</button>
+            </div>
+            
+            <div class="card-counter">
+                <div class="counter-header">牌堆剩余记牌器</div>
+                
+                <div class="counter-group">
+                    <div class="counter-suit">
+                        <div class="suit-name">♠ 黑桃</div>
+                        <div id="spade-count" class="suit-count">26</div>
+                    </div>
+                    <div class="counter-suit">
+                        <div class="suit-name">♥ 红心</div>
+                        <div id="heart-count" class极="suit-count">26</div>
+                    </div>
+                    <div class="counter-suit">
+                        <div class="suit-name">♦ 方块</div>
+                        <div id="diamond-count" class="suit-count">26</div>
+                    </div>
+                    <div class="counter-suit">
+                        <div class="suit-name">♣ 梅花</div>
+                        <div id="club-count" class="suit-count">26</div>
+                    </div>
+                    <div class="counter-suit">
+                        <div class="suit-name">小王</div>
+                        <div id="small-joker-count" class="suit-count">2</div>
+                    </div>
+                    <div class="counter-suit">
+                        <div class="suit-name">大王</div>
+                        <div id="big-joker-count" class="suit-count">2</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="round-progress">
+            <div class="round active" id="round-1">第1轮: 12张</div>
+            <div class="round" id="round-2">第2轮: 12张</div>
+            <div class="round" id="round-3">第3轮: 14张</div>
+            <div class="round" id="round-4">第4轮: 14张</div>
+            <div class="round" id="round-5">第5轮: 16张</div>
+            <div class="round" id="round-6">第6轮: 16张</div>
+        </div>
+        
+        <div class="instructions">
+            <h3>游戏说明</h3>
+            <p>1. 游戏共有6轮，每轮初始手牌数量不同</p>
+            <p>2. 每轮开始后选择牌后点击"出牌"</p>
+            <p>3. 出牌后可选择"弃牌"或"不弃牌"</p>
+            <p>4. 点击"翻转未选牌"会将未选中的牌翻面，并将选中的牌移到右侧展示</p>
+            <p>5. 选中的牌顶部会有"已选"标签和金色边框标记</p>
+            <p>6. 最后一轮（第6轮）没有弃牌阶段</p>
+        </div>
+    </div>
+
+    <script>
+        // 游戏状态
+        const gameState = {
+            deck: [], // 牌堆
+            hand: [], // 玩家手牌
+            discarded: [], // 弃掉的牌
+            played: [], // 已出的牌
+            round: 1, // 当前轮次(1-6)
+            phase: 'playing', // 游戏阶段: playing(出牌), discarding(弃牌)
+            selectedCards: [], // 选中的牌(索引)
+            cardCounts: [12, 12, 14, 14, 16, 16], // 每轮牌数
+            flipMode: false, // 翻转模式
+            cardCounters: {
+                // 花色计数器
+                suits: {
+                    '♠': 26, // 两副牌
+                    '♥': 26,
+                    '♦': 26,
+                    '♣': 26,
+                },
+                // 王计数器
+                jokers: {
+                    '小王': 2,
+                    '大王': 2
+                }
+            },
+            originalPositions: {} // 记录原始位置
+        };
+
+        // 排序映射 - 牌序
+        const rankOrder = {
+            '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, '8': 7, '9': 8, 
+            '10': 9, 'J': 10, 'Q': 11, 'K': 12, 'A': 13,
+            '小王': 14, '大王': 15
+        };
+        
+        const suitOrder = {
+            '♠': 4, '♥': 3, '♦': 2, '♣': 1, '★': 0
+        };
+        
+        const suitSymbols = {
+            '♠': '♠',
+            '♥': '♥',
+            '♦': '♦',
+            '♣': '♣',
+            '★': '★'
+        };
+
+        // 初始化游戏
+        function initGame() {
+            // 重置游戏状态
+            gameState.deck = [];
+            gameState.hand = [];
+            gameState.discarded = [];
+            gameState.played = [];
+            gameState.round = 1;
+            gameState.phase = 'playing';
+            gameState.selectedCards = [];
+            gameState.flipMode = false;
+            
+            // 重置记牌器
+            gameState.cardCounters = {
+                suits: {
+                    '♠': 26, '♥': 26, '♦': 26, '♣': 26
+                },
+                jokers: {
+                    '小王': 2, '大王': 2
+                }
+            };
+            
+            gameState.originalPositions = {};
+
+            // 创建牌堆（2副扑克牌）
+            const suits = ['♠', '♥', '♦', '♣'];
+            const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+            
+            // 添加两套标准牌
+            for (let i = 0; i < 2; i++) {
+                for (let suit of suits) {
+                    for (let rank of ranks) {
+                        gameState.deck.push({
+                            suit: suit,
+                            rank: rank,
+                            isJoker: false,
+                            rankValue: rankOrder[rank],
+                            suitValue: suitOrder[suit],
+                            id: Math.random().toString(36).substring(2, 11) // 唯一标识符
+                        });
+                    }
+                }
+            }
+            
+            // 添加大小王（4张，每副2张）
+            for (let i = 0; i < 4; i++) {
+                const isBigJoker = i % 2 === 1;
+                gameState.deck.push({
+                    suit: '★',
+                    rank: isBigJoker ? '大王' : '小王',
+                    isJoker: true,
+                    rankValue: isBigJoker ? 15 : 14,
+                    suitValue: 0,
+                    id: Math.random().toString(36).substring(2, 11) // 唯一标识符
+                });
+            }
+            
+            // 洗牌
+            shuffleDeck();
+            
+            // 初始发牌
+            const initialCards = gameState.cardCounts[0];
+            dealCards(initialCards);
+            
+            // 更新UI
+            updateGameUI();
+            updateGameMessage(`第1轮 - 出牌阶段 (${initialCards}张牌)`);
+            updateCardCounter();
+        }
+
+        // 洗牌算法
+        function shuffleDeck() {
+            for (let i = gameState.deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [gameState.deck[i], gameState.deck[j]] = [gameState.deck[j], gameState.deck[i]];
+            }
+        }
+
+        // 发牌（指定数量）
+        function dealCards(count) {
+            // 确保不会要求超过可用牌的数量
+            const actualCount = Math.min(count, gameState.deck.length);
+            if (actualCount === 0) return;
+            
+            const dealtCards = gameState.deck.splice(0, actualCount);
+            gameState.hand = [...gameState.hand, ...dealtCards];
+            
+            // 更新记牌器数据
+            dealtCards.forEach(card => {
+                if (card.isJoker) {
+                    gameState.cardCounters.jokers[card.rank]--;
+                } else {
+                    gameState.cardCounters.suits[card.suit]--;
+                }
+            });
+            
+            // 对手牌进行排序
+            sortHand();
+        }
+
+        // 对手牌进行排序
+        function sortHand() {
+            gameState.hand.sort((a, b) => {
+                // 先按点数排序
+                if (a.rankValue !== b.rankValue) {
+                    return a.rankValue - b.rankValue;
+                }
+                // 点数相同按花色排序
+                return a.suitValue - b.suitValue;
+            });
+            
+            // 更新原始位置记录
+            gameState.hand.forEach((card, index) => {
+                gameState.originalPositions[card.id] = index;
+            });
+        }
+
+        // 更新游戏UI
+        function updateGameUI() {
+            // 更新手牌显示
+            const handElement = document.getElementById('hand');
+            handElement.innerHTML = '';
+            
+            // 特殊处理翻转状态 - 修复：将选中的牌移到右侧展示
+            if (gameState.flipMode) {
+                // 分为两组：未选中的牌和选中的牌
+                const unselectedCards = [];
+                const selectedCards = [];
+                
+                gameState.hand.forEach((card, index) => {
+                    if (!gameState.selectedCards.includes(index)) {
+                        unselectedCards.push(card);
+                    } else {
+                        selectedCards.push(card);
+                    }
+                });
+                
+                // 组合：未选中牌在前（左侧），选中的牌在后（右侧）
+                const sortedHand = [...unselectedCards, ...selectedCards];
+                
+                // 渲染卡片
+                sortedHand.forEach((card, displayIndex) => {
+                    const originalIndex = gameState.hand.indexOf(card);
+                    createCardElement(handElement, card, originalIndex);
+                });
+            } else {
+                // 正常状态：按原始顺序渲染
+                gameState.hand.forEach((card, index) => {
+                    createCardElement(handElement, card, index);
+                });
+            }
+            
+            // 更新游戏信息
+            document.getElementById('current-round').textContent = gameState.round;
+            document.getElementById('current-round-cards').textContent = 
+                gameState.round <= 6 ? gameState.cardCounts[gameState.round-1] : 0;
+            document.getElementById('remaining-cards').textContent = gameState.deck.length;
+            document.getElementById('selected-count').textContent = gameState.selectedCards.length;
+            document.getElementById('game-state').textContent = 
+                gameState.phase === 'playing' ? '出牌' : gameState.phase === 'discarding' ? '弃牌' : '结束';
+            
+            // 更新按钮状态
+            document.getElementById('play-cards-btn').disabled = gameState.phase !== 'playing';
+            document.getElementById('discard-btn').disabled = gameState.phase !== 'discarding' || gameState.round === 6;
+            document.getElementById('skip-discard-btn').disabled = gameState.phase !== 'discarding' || gameState.round === 6;
+            
+            // 更新轮次进度
+            document.querySelectorAll('.round').forEach((el, idx) => {
+                if (gameState.round > idx + 1) {
+                    el.style.backgroundColor = 'rgba(50, 200, 50, 0.6)';
+                } else if (gameState.round === idx + 1) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                    el.style.backgroundColor = '';
+                }
+            });
+        }
+        
+        // 创建单个卡牌元素
+        function createCardElement(container, card, originalIndex) {
+            const cardContainer = document.createElement('div');
+            cardContainer.className = 'card-container';
+            cardContainer.dataset.index = originalIndex;
+            
+            // 根据花色和是否为Joker设置卡牌样式
+            let cardClass = card.isJoker ? 'joker' : '';
+            if (!card.isJoker) {
+                cardClass += ' ' + (card.suit === '♦' || card.suit === '♥' ? 'diamonds hearts' : 'spades clubs');
+            }
+            
+            const cardElement = document.createElement('div');
+            cardElement.className = `card ${cardClass}`;
+            
+            if (gameState.selectedCards.includes(originalIndex)) {
+                cardElement.classList.add('selected');
+                
+                // 添加选中标签
+                const selectedTag = document.createElement('div');
+                selectedTag.className = 'selected-tag';
+                selectedTag.textContent = '已选';
+                cardContainer.appendChild(selectedTag);
+            }
+            
+            if (gameState.flipMode && !gameState.selectedCards.includes(originalIndex)) {
+                cardElement.classList.add('flipped');
+            }
+            
+            const value = card.isJoker ? card.rank : card.rank;
+            const suit = card.isJoker ? '★' : card.suit;
+            
+            // 构建牌面
+            cardElement.innerHTML = `
+                <div class="card-face card-front">
+                    <div class="card-top">
+                        <div class="card-value">${value}</div>
+                        <div class="mini-suit">${suitSymbols[suit]}</div>
+                    </div>
+                    <div class="card-center">
+                        <div class="card-suit">${suitSymbols[suit]}</div>
+                    </div>
+                    <div class="card-bottom">
+                        <div class="card-value">${value}</div>
+                        <div class="mini-suit">${suitSymbols[suit]}</div>
+                    </div>
+                </div>
+                <div class="card-face card-back">
+                    <div class="card-back-pattern"></div>
+                </div>
+            `;
+            
+            cardContainer.appendChild(cardElement);
+            cardContainer.addEventListener('click', () => toggleSelectCard(originalIndex));
+            container.appendChild(cardContainer);
+        }
+        
+        // 更新游戏消息
+        function updateGameMessage(message) {
+            document.getElementById('game-message').textContent = message;
+        }
+        
+        // 更新记牌器显示
+        function updateCardCounter() {
+            // 更新花色计数器显示
+            document.getElementById('spade-count').textContent = gameState.cardCounters.suits['♠'];
+            document.getElementById('heart-count').textContent = gameState.cardCounters.suits['♥'];
+            document.getElementById('diamond-count').textContent = gameState.cardCounters.suits['♦'];
+            document.getElementById('club-count').textContent = gameState.cardCounters.suits['♣'];
+            document.getElementById('small-joker-count').textContent = gameState.cardCounters.jokers['小王'];
+            document.getElementById('big-joker-count').textContent = gameState.cardCounters.jokers['大王'];
+        }
+
+        // 选牌/取消选牌
+        function toggleSelectCard(index) {
+            if (gameState.selectedCards.includes(index)) {
+                gameState.selectedCards = gameState.selectedCards.filter(i => i !== index);
+            } else {
+                gameState.selectedCards.push(index);
+            }
+            updateGameUI();
+        }
+
+        // 翻转未选牌
+        function toggleFlipMode() {
+            gameState.flipMode = !gameState.flipMode;
+            updateGameUI();
+            updateGameMessage(gameState.flipMode ? 
+                "未选中的牌已翻面！选中的牌已移到右侧！" : 
+                "牌面已恢复正常位置");
+        }
+
+        // 出牌操作
+        function playSelectedCards() {
+            if (gameState.phase !== 'playing') return;
+            if (gameState.selectedCards.length === 0) {
+                updateGameMessage("请选择要出的牌");
+                return;
+            }
+            
+            // 将选中的牌移到已出牌区
+            const playedCards = [];
+            const newHand = [];
+            
+            gameState.hand.forEach((card, index) => {
+                if (gameState.selectedCards.includes(index)) {
+                    playedCards.push(card);
+                } else {
+                    newHand.push(card);
+                }
+            });
+            
+            gameState.hand = newHand;
+            gameState.played = [...gameState.played, ...playedCards];
+            gameState.selectedCards = [];
+            gameState.flipMode = false;
+            
+            // 游戏阶段转换
+            if (gameState.round === 6) {
+                // 最后一轮出牌后直接结束
+                gameState.phase = 'finished';
+                updateGameMessage(`第6轮出牌完成！游戏结束！`);
+            } else {
+                gameState.phase = 'discarding';
+                updateGameMessage(`请选择要弃的牌或选择"不弃牌"`);
+            }
+            
+            sortHand();
+            updateGameUI();
+            updateCardCounter();
+        }
+
+        // 弃牌操作
+        function discardSelectedCards() {
+            if (gameState.phase !== 'discarding') return;
+            
+            // 移除选中的牌（如果有）
+            const discardedCards = [];
+            const newHand = [];
+            
+            gameState.hand.forEach((card, index) => {
+                if (gameState.selectedCards.includes(index)) {
+                    discardedCards.push(card);
+                } else {
+                    newHand.push(card);
+                }
+            });
+            
+            gameState.hand = newHand;
+            gameState.discarded = [...gameState.discarded, ...discardedCards];
+            gameState.selectedCards = [];
+            
+            // 进入下一轮并摸牌
+            moveToNextRound();
+        }
+
+        // 跳过弃牌操作
+        function skipDiscarding() {
+            if (gameState.phase !== 'discarding') return;
+            
+            // 直接进入下一轮并摸牌
+            moveToNextRound();
+        }
+
+        // 进入下一轮并摸牌
+        function moveToNextRound() {
+            // 第1轮索引0，第2轮索引1...
+            const nextRoundIndex = gameState.round; // 当前是第N轮，下一轮是第N+1轮
+            const requiredCards = gameState.cardCounts[nextRoundIndex];
+            
+            // 计算需要补牌的数量
+            const currentCardCount = gameState.hand.length;
+            const cardsToDraw = requiredCards - currentCardCount;
+            
+            // 摸牌补充
+            if (cardsToDraw > 0 && gameState.deck.length > 0) {
+                dealCards(cardsToDraw);
+                updateGameMessage(`补充了${Math.min(cardsToDraw, gameState.deck.length)}张牌`);
+                updateCardCounter();
+            }
+            
+            // 轮次增加
+            gameState.round++;
+            gameState.phase = 'playing';
+            gameState.selectedCards = [];
+            gameState.flipMode = false;
+            
+            if (gameState.round > 6) {
+                updateGameMessage("恭喜完成全部6轮游戏！");
+                gameState.phase = 'finished';
+            } else {
+                updateGameMessage(`第${gameState.round}轮 - 出牌阶段`);
+            }
+            
+            sortHand();
+            updateGameUI();
+        }
+
+        // 事件监听器绑定
+        document.addEventListener('DOMContentLoaded', () => {
+            // 初始化游戏
+            initGame();
+            
+            // 绑定按钮事件
+            document.getElementById('play-cards-btn').addEventListener('click', playSelectedCards);
+            document.getElementById('discard-btn').addEventListener('click', discardSelectedCards);
+            document.getElementById('skip-discard-btn').addEventListener('click', skipDiscarding);
+            document.getElementById('flip-cards-btn').addEventListener('click', toggleFlipMode);
+            document.getElementById('restart-btn').addEventListener('click', initGame);
+        });
+    </script>
+</body>
+</html>
