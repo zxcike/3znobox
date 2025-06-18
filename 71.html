@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>筹码管理</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #2c3e50);
+            color: #ecf0f1;
+            min-height: 100vh;
+            padding: 8px;
+            font-size: 14px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            background: rgba(25, 35, 45, 0.85);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            margin-bottom: 8px;
+            color: #3498db;
+            font-size: 18px;
+            text-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+        }
+        
+        .controls {
+            background: rgba(25, 35, 45, 0.85);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            color: #3498db;
+            font-size: 14px;
+        }
+        
+        .section-title i {
+            font-size: 16px;
+        }
+        
+        .score-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .score-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            flex: 1;
+        }
+        
+        .score-btn {
+            background: rgba(52, 152, 219, 0.3);
+            color: white;
+            border: 1px solid #3498db;
+            border-radius: 15px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 35px;
+            text-align: center;
+        }
+        
+        .score-btn:hover {
+            background: rgba(52, 152, 219, 0.7);
+            transform: translateY(-2px);
+        }
+        
+        .score-btn.active {
+            background: #e74c3c;
+            border-color: #e74c3c;
+            box-shadow: 0 0 8px rgba(231, 76, 60, 0.6);
+            transform: translateY(-2px);
+        }
+        
+        .current-score {
+            background: rgba(46, 204, 113, 0.2);
+            border-radius: 6px;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #2ecc71;
+            font-size: 13px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .transaction-info {
+            background: rgba(236, 240, 241, 0.1);
+            border-radius: 6px;
+            padding: 10px;
+            border: 1px solid #3498db;
+            font-size: 12px;
+            min-height: 45px;
+        }
+        
+        .custom-score-section {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        #newScore {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #3498db;
+            border-radius: 15px;
+            padding: 6px 10px;
+            color: white;
+            font-size: 12px;
+        }
+        
+        .add-score-btn {
+            background: rgba(241, 196, 15, 0.3);
+            color: white;
+            border: 1px solid #f1c40f;
+            border-radius: 15px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .add-score-btn:hover {
+            background: rgba(241, 196, 15, 0.7);
+            transform: translateY(-2px);
+        }
+        
+        .players {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .player {
+            background: rgba(44, 62, 80, 0.9);
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+        
+        .player:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+        
+        .player.highlight {
+            border: 2px solid #e74c3c;
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.8);
+            transform: translateY(-3px);
+        }
+        
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(52, 152, 219, 0.5);
+        }
+        
+        .player-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #3498db;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 4px 6px;
+            border-radius: 4px;
+        }
+        
+        .player-name:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .player-name-input {
+            background: transparent;
+            border: 1px solid #3498db;
+            color: #3498db;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 4px;
+            border-radius: 4px;
+            width: 90px;
+        }
+        
+        .player-icon {
+            font-size: 14px;
+        }
+        
+        .total-chips {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2ecc71;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            background: rgba(0, 0, 0, 0.3);
+            min-width: 110px;
+            text-align: right;
+        }
+        
+        .total-chips:hover {
+            background: rgba(46, 204, 113, 0.2);
+            transform: scale(1.01);
+        }
+        
+        .total-chips input {
+            background: transparent;
+            border: 1px solid #3498db;
+            color: #2ecc71;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 4px;
+            border-radius: 4px;
+            width: 100%;
+            text-align: right;
+            font-family: inherit;
+        }
+        
+        .chips-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            min-height: 80px;
+            padding: 6px;
+            border-radius: 6px;
+            background: rgba(30, 40, 50, 0.8);
+        }
+        
+        .chip {
+            position: relative;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.3),
+                        0 3px 5px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            font-weight: bold;
+            font-size: 10px;
+            overflow: hidden;
+        }
+        
+        .chip:hover {
+            transform: scale(1.1);
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2),
+                        0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+        
+        .chip-value {
+            position: absolute;
+            bottom: 3px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 1px 6px;
+            border-radius: 15px;
+            font-size: 9px;
+        }
+        
+        /* 筹码颜色设计 */
+        .chip-1 { background: radial-gradient(circle at 30% 30%, #ffffff, #cccccc); color: #222; }
+        .chip-2 { background: radial-gradient(circle at 30% 30%, #ff9999, #cc6666); }
+        .chip-5 { background: radial-gradient(circle at 30% 30%, #66ccff, #3399cc); }
+        .chip-10 { background: radial-gradient(circle at 30% 30%, #99ff99, #66cc66); color: #222; }
+        .chip-20 { background: radial-gradient(circle at 30% 30%, #ffcc66, #cc9933); color: #222; }
+        .chip-50 { background: radial-gradient(circle at 30% 30%, #cc99ff, #9966cc); }
+        .chip-100 { background: radial-gradient(circle at 30% 30%, #66ff66, #33cc33); color: #222; }
+        .chip-200 { background: radial-gradient(circle at 30% 30%, #ff99ff, #cc66cc); color: #222; }
+        .chip-500 { background: radial-gradient(circle at 30% 30%, #ffff66, #cccc33); color: #222; }
+        .chip-1000 { background: radial-gradient(circle at 30% 30%, #9966ff, #6600cc); }
+        .chip-2000 { background: radial-gradient(circle at 30% 30%, #ff6666, #cc0000); }
+        .chip-5000 { background: radial-gradient(circle at 30% 30%, #66ffff, #00cccc); color: #222; }
+        .chip-10000 { background: radial-gradient(circle at 30% 30%, #66ff99, #00cc66); color: #222; }
+        .chip-20000 { background: radial-gradient(circle at 30% 30%, #ff9966, #cc6600); color: #222; }
+        .chip-50000 { background: radial-gradient(circle at 30% 30%, #cc66ff, #9900cc); }
+        .chip-100000 { background: radial-gradient(circle at 30% 30%, #66cc66, #339933); color: #222; }
+        .chip-200000 { background: radial-gradient(circle at 30% 30%, #ffaa33, #cc7700); color: #222; }
+        .chip-500000 { background: radial-gradient(circle at 30% 30%, #ffcc99, #cc9966); color: #222; }
+        .chip-1000000 { background: radial-gradient(circle at 30% 30%, #3399ff, #0066cc); }
+        
+        .transaction-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .transaction-display i {
+            color: #e74c3c;
+            font-size: 12px;
+        }
+        
+        #statusArea {
+            background: rgba(231, 76, 60, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border: 1px solid #e74c3c;
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+        }
+        
+        .bankrupt {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            background: #e74c3c;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 9px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        
+        .chip-animation {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 0 4px rgba(255, 255, 255, 0.7);
+            animation: chipFly 0.8s forwards;
+            border: 1px solid white;
+            font-size: 10px;
+        }
+        
+        @keyframes chipFly {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            70% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0.1);
+                opacity: 0;
+            }
+        }
+        
+        .value-change {
+            position: absolute;
+            font-size: 14px;
+            font-weight: bold;
+            pointer-events: none;
+            animation: valueChange 1s forwards;
+            z-index: 100;
+        }
+        
+        .positive {
+            color: #2ecc71;
+        }
+        
+        .negative {
+            color: #e74c3c;
+        }
+        
+        @keyframes valueChange {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-60px);
+            }
+        }
+        
+        .player-footer {
+            margin-top: 8px;
+            text-align: center;
+            padding: 6px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            font-size: 11px;
+        }
+        
+        @media (max-width: 768px) {
+            .players {
+                grid-template-columns: 1fr;
+            }
+            
+            .chip {
+                width: 30px;
+                height: 30px;
+                font-size: 9px;
+            }
+        }
+        
+        .reset-button {
+            background: rgba(231, 76, 60, 0.25);
+            border: 1px solid #e74c3c;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.2s;
+            display: block;
+            width: 100%;
+        }
+        
+        .reset-button:hover {
+            background: rgba(231, 76, 60, 0.5);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-coins"></i> 筹码管理</h1>
+        </header>
+        
+        <section id="statusArea">
+            <i class="fas fa-info-circle"></i> ok
+        </section>
+        
+        <section class="controls">
+            <div class="section-title">
+                <i class="fas fa-sliders-h"></i>
+                <h2>board</h2>
+            </div>
+            
+            <div class="score-buttons" id="scoreButtons">
+                <!-- score -->
+            </div>
+            
+            <div class="current-score" id="currentScoreDisplay">
+                <i class="fas fa-dice"></i>
+                <span>null</span>
+            </div>
+            
+            <div class="custom-score-section">
+                <input type="number" id="newScore" placeholder="new">
+                <button class="add-score-btn" id="addScoreBtn">
+                    <i class="fas fa-plus"></i> add
+                </button>
+            </div>
+            
+            <div class="transaction-info">
+                <div id="transactionStatus">player1</div>
+                <div class="transaction-display">
+                    <div id="transactionFrom">A</div>
+                    <i class="fas fa-exchange-alt"></i>
+                    <div id="transactionTo">to B</div>
+                </div>
+            </div>
+            
+            <button class="reset-button" id="resetAllBtn">
+                <i class="fas fa-sync-alt"></i> reset
+            </button>
+        </section>
+        
+        <div class="players">
+            <div class="player" id="player1">
+                <div class="player-header">
+                    <div class="player-name" onclick="editName(1)">
+                        <i class="fas fa-user player-icon"></i>
+                        <span id="name1">player A</span>
+                    </div>
+                    <div class="total-chips" onclick="editChips(1)">10000</div>
+                </div>
+                <div class="chips-display" id="chips1"></div>
+                <div class="player-footer">
+                    <i class="fas fa-hand-pointer"></i> player
+                </div>
+            </div>
+            
+            <div class="player" id="player2">
+                <div class="player-header">
+                    <div class="player-name" onclick="editName(2)">
+                        <i class="fas fa-user-alt player-icon"></i>
+                        <span id="name2">player B</span>
+                    </div>
+                    <div class="total-chips" onclick="editChips(2)">10000</div>
+                </div>
+                <div class="chips-display" id="chips2"></div>
+                <div class="player-footer">
+                    <i class="fas fa-hand-pointer"></i> receiver
+                </div>
+            </div>
+            
+            <div class="player" id="player3">
+                <div class="player-header">
+                    <div class="player-name" onclick="editName(3)">
+                        <i class="fas fa-user-friends player-icon"></i>
+                        <span id="name3">player C</span>
+                    </div>
+                    <div class="total-chips" onclick="editChips(3)">10000</div>
+                </div>
+                <div class="chips-display" id="chips3"></div>
+                <div class="player-footer">
+                    <i class="fas fa-hand-pointer"></i> receiver
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 筹码面值 - 包含200,000面值
+        const chipValues = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 
+                            10000, 20000, 50000, 100000, 200000, 500000, 1000000];
+        
+        // 玩家数据
+        const players = [
+            { 
+                id: 1, 
+                name: "player A", 
+                total: 1000, 
+                element: document.getElementById('player1'), 
+                chipsDisplay: document.getElementById('chips1'),
+                nameElement: document.getElementById('name1')
+            },
+            { 
+                id: 2, 
+                name: "player B", 
+                total: 1000, 
+                element: document.getElementById('player2'), 
+                chipsDisplay: document.getElementById('chips2'),
+                nameElement: document.getElementById('name2')
+            },
+            { 
+                id: 3, 
+                name: "player C", 
+                total: 1000, 
+                element: document.getElementById('player3'), 
+                chipsDisplay: document.getElementById('chips3'),
+                nameElement: document.getElementById('name3')
+            }
+        ];
+        
+        // 分数按钮选项 (包含160分)
+        const scoreOptions = [10, 20, 30, 40, 50, 60, 80, 100, 120, 150, 160, 180, 200, 240, 250, 300];
+        
+        // 交易状态
+        let transaction = {
+            amount: 0,
+            fromPlayer: null,
+            toPlayer: null,
+            active: false,
+            scoreSet: false
+        };
+        
+        // 初始化函数
+        function init() {
+            createScoreButtons();
+            initPlayers();
+            setupEventListeners();
+            updateStatus("ok");
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 玩家点击监听
+            players.forEach(player => {
+                player.element.addEventListener('click', function() {
+                    selectPlayerForTransaction(player.id);
+                });
+            });
+            
+            // 按钮监听
+            document.getElementById('addScoreBtn').addEventListener('click', addCustomScore);
+            document.getElementById('resetAllBtn').addEventListener('click', resetAll);
+            
+            // 回车添加分数
+            document.getElementById('newScore').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addCustomScore();
+                }
+            });
+        }
+        
+        // 创建分数按钮
+        function createScoreButtons() {
+            const container = document.getElementById('scoreButtons');
+            container.innerHTML = '';
+            
+            // 对分数排序
+            const sortedScores = [...scoreOptions].sort((a, b) => a - b);
+            
+            sortedScores.forEach(score => {
+                const button = document.createElement('button');
+                button.className = 'score-btn';
+                button.innerHTML = `<i class="fas fa-dice"></i> ${score}`;
+                button.dataset.score = score;
+                button.addEventListener('click', () => setTransactionScore(score));
+                container.appendChild(button);
+            });
+        }
+        
+        // 初始化玩家筹码显示
+        function initPlayers() {
+            players.forEach(player => {
+                updatePlayerDisplay(player.id);
+            });
+        }
+        
+        // 选择玩家进行交易
+        function selectPlayerForTransaction(playerId) {
+            // 如果分数没有设置，提示先选择分数
+            if (!transaction.scoreSet) {
+                updateStatus("warning!");
+                return;
+            }
+            
+            // 首次点击玩家 - 设置为转出玩家
+            if (transaction.fromPlayer === null) {
+                transaction.fromPlayer = playerId;
+                players[playerId-1].element.classList.add('highlight');
+                updateStatus(` ${players[playerId-1].name} `);
+                document.getElementById('transactionFrom').innerHTML = ` <span style="color:#e74c3c">${players[playerId-1].name}</span>`;
+            } 
+            // 第二次点击玩家 - 设置为接收玩家（且不能是同一个玩家）
+            else if (transaction.toPlayer === null && playerId !== transaction.fromPlayer) {
+                transaction.toPlayer = playerId;
+                players[playerId-1].element.classList.add('highlight');
+                document.getElementById('transactionTo').innerHTML = ` <span style="color:#2ecc71">${players[playerId-1].name}</span>`;
+                
+                // 立即执行交易
+                executeTransaction();
+            }
+            // 点击已选择的玩家 - 取消选择
+            else if (playerId === transaction.fromPlayer) {
+                players[playerId-1].element.classList.remove('highlight');
+                transaction.fromPlayer = null;
+                updateStatus("cancel");
+                document.getElementById('transactionFrom').textContent = '转出玩家：未选择';
+            }
+            // 点击已选择的接收玩家 - 取消选择
+            else if (playerId === transaction.toPlayer) {
+                players[playerId-1].element.classList.remove('highlight');
+                transaction.toPlayer = null;
+                updateStatus("cancel");
+                document.getElementById('transactionTo').textContent = '接收玩家：未选择';
+            }
+            // 点击其他玩家但接收方已设置 - 更新接收玩家
+            else if (transaction.toPlayer !== null) {
+                // 先清除上一个选择
+                players[transaction.toPlayer-1].element.classList.remove('highlight');
+                
+                // 设置新的接收玩家
+                transaction.toPlayer = playerId;
+                players[playerId-1].element.classList.add('highlight');
+                document.getElementById('transactionTo').innerHTML = `<span style="color:#2ecc71">${players[playerId-1].name}</span>`;
+                
+                // 立即执行交易
+                executeTransaction();
+            }
+        }
+        
+        // 添加自定义分数
+        function addCustomScore() {
+            const input = document.getElementById('newScore');
+            const newScore = parseInt(input.value);
+            
+            if (isNaN(newScore) || newScore <= 0) {
+                updateStatus("warning!");
+                return;
+            }
+            
+            // 如果分数已存在，直接选择
+            if (scoreOptions.includes(newScore)) {
+                setTransactionScore(newScore);
+                input.value = '';
+                updateStatus(`ok`);
+                return;
+            }
+            
+            // 添加新分数
+            scoreOptions.push(newScore);
+            createScoreButtons();
+            setTransactionScore(newScore);
+            
+            input.value = '';
+            updateStatus(`ok`);
+        }
+        
+        // 设置交易分数
+        function setTransactionScore(score) {
+            // 设置交易分数
+            transaction.amount = score;
+            transaction.scoreSet = true;
+            
+            // 更新状态信息
+            updateStatus(`ok`);
+            
+            // 高亮所有分数按钮，并激活当前选择的按钮
+            const buttons = document.querySelectorAll('.score-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+                if(parseInt(btn.dataset.score) === score) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // 更新当前分数显示
+            document.getElementById('currentScoreDisplay').innerHTML = `<i class="fas fa-dice"></i> score: <span style="color:#2ecc71">${score}</span>`;
+        }
+        
+        // 执行交易
+        function executeTransaction() {
+            // 验证交易信息
+            if (!transaction.scoreSet) {
+                updateStatus("warning");
+                return;
+            }
+            
+            if (transaction.fromPlayer === null) {
+                updateStatus("warning");
+                return;
+            }
+            
+            if (transaction.toPlayer === null) {
+                updateStatus("warning");
+                return;
+            }
+            
+            if (transaction.fromPlayer === transaction.toPlayer) {
+                updateStatus("again?");
+                return;
+            }
+            
+            const fromPlayer = players[transaction.fromPlayer - 1];
+            const toPlayer = players[transaction.toPlayer - 1];
+            
+            // 检查玩家是否有足够筹码
+            if (fromPlayer.total < transaction.amount) {
+                // 筹码不足 - 破产，给所有筹码
+                animateTransaction(fromPlayer, toPlayer, fromPlayer.total);
+                
+                // 执行交易
+                const transferAmount = fromPlayer.total;
+                fromPlayer.total = 0;
+                toPlayer.total += transferAmount;
+                
+                // 更新显示
+                updatePlayerDisplay(transaction.fromPlayer);
+                updatePlayerDisplay(transaction.toPlayer);
+                
+                // 添加破产标志
+                createBankruptSign(fromPlayer);
+                
+                // 更新状态
+                updateStatus(`${fromPlayer.name} to ${toPlayer.name} for all（${transferAmount}point）!`);
+            } else {
+                // 足够的筹码 - 正常交易
+                animateTransaction(fromPlayer, toPlayer, transaction.amount);
+                
+                // 执行交易
+                fromPlayer.total -= transaction.amount;
+                toPlayer.total += transaction.amount;
+                
+                // 更新显示
+                updatePlayerDisplay(transaction.fromPlayer);
+                updatePlayerDisplay(transaction.toPlayer);
+                
+                // 更新状态
+                updateStatus(`${fromPlayer.name} to ${toPlayer.name} for ${transaction.amount} point`);
+            }
+            
+            // 立即重置玩家选择
+            resetPlayers();
+        }
+        
+        // 创建破产标志
+        function createBankruptSign(player) {
+            if (document.querySelector(`#player${player.id} .bankrupt`)) return;
+            
+            const bankruptSign = document.createElement('div');
+            bankruptSign.className = 'bankrupt';
+            bankruptSign.innerHTML = '<i class="fas fa-skull"></i> wasted';
+            player.element.appendChild(bankruptSign);
+        }
+        
+        // 交易动画
+        function animateTransaction(fromPlayer, toPlayer, amount) {
+            // 获取元素位置
+            const fromRect = fromPlayer.element.getBoundingClientRect();
+            const toRect = toPlayer.element.getBoundingClientRect();
+            
+            // 计算起始和结束位置
+            const startX = fromRect.left + fromRect.width/2;
+            const startY = fromRect.top + fromRect.height/2;
+            const endX = toRect.left + toRect.width/2;
+            const endY = toRect.top + toRect.height/2;
+            
+            // 创建3个动画筹码（代表交易金额）
+            const chipsToCreate = Math.min(Math.floor(amount/100) + 1, 5);
+            
+            for (let i = 0; i < chipsToCreate; i++) {
+                // 创建动画筹码
+                const animatedChip = document.createElement('div');
+                animatedChip.className = 'chip-animation chip-500';
+                animatedChip.textContent = i === chipsToCreate - 1 ? amount : ' ';
+                animatedChip.style.left = `${startX}px`;
+                animatedChip.style.top = `${startY}px`;
+                
+                // 设置动画终点（加一些随机偏移）
+                const tx = endX - startX + (Math.random() * 50 - 25);
+                const ty = endY - startY + (Math.random() * 50 - 25);
+                animatedChip.style.setProperty('--tx', `${tx}px`);
+                animatedChip.style.setProperty('--ty', `${ty}px`);
+                
+                document.body.appendChild(animatedChip);
+                
+                // 移除动画元素
+                setTimeout(() => {
+                    if (document.body.contains(animatedChip)) {
+                        document.body.removeChild(animatedChip);
+                    }
+                }, 800);
+            }
+            
+            // 创建数值变化动画
+            createValueChangeAnimation(fromPlayer, -amount, '#e74c3c');
+            createValueChangeAnimation(toPlayer, amount, '#2ecc71');
+        }
+        
+        // 创建数值变化动画
+        function createValueChangeAnimation(player, amount, color) {
+            const rect = player.element.getBoundingClientRect();
+            
+            const valueChange = document.createElement('div');
+            valueChange.className = `value-change ${amount > 0 ? 'positive' : 'negative'}`;
+            valueChange.textContent = amount > 0 ? `+${amount}` : amount;
+            valueChange.style.color = color;
+            valueChange.style.left = `${rect.left + rect.width - 70}px`;
+            valueChange.style.top = `${rect.top + rect.height/2}px`;
+            
+            document.body.appendChild(valueChange);
+            
+            // 移除动画元素
+            setTimeout(() => {
+                if (document.body.contains(valueChange)) {
+                    document.body.removeChild(valueChange);
+                }
+            }, 1000);
+        }
+        
+        // 重置玩家选择
+        function resetPlayers() {
+            // 清除玩家高亮
+            players.forEach(player => {
+                player.element.classList.remove('highlight');
+            });
+            
+            // 重置交易状态（转出和接收玩家）
+            transaction.fromPlayer = null;
+            transaction.toPlayer = null;
+            
+            // 重置显示
+            document.getElementById('transactionFrom').textContent = 'null';
+            document.getElementById('transactionTo').textContent = 'null';
+            
+            updateStatus(transaction.amount);
+        }
+        
+        // 重置整个交易
+        function resetAll() {
+            // 清除玩家高亮
+            players.forEach(player => {
+                player.element.classList.remove('highlight');
+                // 移除破产标志
+                const bankruptSign = document.querySelector(`#player${player.id} .bankrupt`);
+                if (bankruptSign) bankruptSign.remove();
+            });
+            
+            // 重置交易状态
+            transaction.amount = 0;
+            transaction.fromPlayer = null;
+            transaction.toPlayer = null;
+            transaction.active = false;
+            transaction.scoreSet = false;
+            
+            // 移除分数按钮高亮
+            document.querySelectorAll('.score-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 重置显示
+            document.getElementById('transactionFrom').textContent = 'null';
+            document.getElementById('transactionTo').textContent = 'null';
+            document.getElementById('currentScoreDisplay').innerHTML = `<i class="fas fa-dice"></i> `;
+            
+            // 重置玩家筹码
+            players.forEach(player => {
+                player.total = 10000;
+                updatePlayerDisplay(player.id);
+            });
+            
+            updateStatus("reset");
+        }
+        
+        // 编辑玩家名称
+        function editName(playerId) {
+            const player = players[playerId - 1];
+            const element = player.nameElement;
+            const currentName = player.name;
+            
+            // 创建输入框
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentName;
+            input.className = 'player-name-input';
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    saveName(playerId, input.value);
+                } else if (e.key === 'Escape') {
+                    cancelNameEdit(playerId, currentName);
+                }
+            };
+            input.onblur = () => {
+                saveName(playerId, input.value);
+            };
+            
+            // 替换显示
+            element.innerHTML = '';
+            element.appendChild(input);
+            input.focus();
+            input.select();
+        }
+        
+        // 保存玩家名称
+        function saveName(playerId, value) {
+            const player = players[playerId - 1];
+            player.name = value || `player ${String.fromCharCode(64 + playerId)}`;
+            
+            // 更新显示
+            const element = player.nameElement;
+            element.innerHTML = player.name;
+            
+            // 更新交易显示（如果当前被选中）
+            if (transaction.fromPlayer === playerId) {
+                document.getElementById('transactionFrom').innerHTML = `<span style="color:#e74c3c">${player.name}</span>`;
+            }
+            
+            if (transaction.toPlayer === playerId) {
+                document.getElementById('transactionTo').innerHTML = `to: <span style="color:#2ecc71">${player.name}</span>`;
+            }
+        }
+        
+        // 编辑筹码总数
+        function editChips(playerId) {
+            const player = players[playerId - 1];
+            const element = document.querySelector(`#player${playerId} .total-chips`);
+            
+            // 创建输入框
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.value = player.total;
+            input.min = 0;
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    saveChips(playerId, input.value);
+                } else if (e.key === 'Escape') {
+                    cancelEdit(playerId, player.total);
+                }
+            };
+            input.onblur = () => {
+                saveChips(playerId, input.value);
+            };
+            
+            // 替换显示
+            element.textContent = '';
+            element.appendChild(input);
+            input.focus();
+            input.select();
+        }
+        
+        // 保存筹码编辑
+        function saveChips(playerId, value) {
+            const total = parseInt(value) || 0;
+            const player = players[playerId - 1];
+            player.total = total >= 0 ? total : 0;
+            
+            // 移除破产标志
+            const bankruptSign = document.querySelector(`#player${playerId} .bankrupt`);
+            if (bankruptSign && player.total > 0) {
+                bankruptSign.remove();
+            }
+            
+            // 更新显示
+            updatePlayerDisplay(playerId);
+        }
+        
+        // 更新玩家显示
+        function updatePlayerDisplay(playerId) {
+            const player = players[playerId - 1];
+            const display = player.chipsDisplay;
+            
+            // 设置显示的总额
+            const totalElement = document.querySelector(`#player${playerId} .total-chips`);
+            totalElement.textContent = player.total.toLocaleString();
+            
+            // 清空当前显示
+            display.innerHTML = '';
+            
+            // 如果玩家破产，显示提示
+            if (player.total === 0) {
+                display.innerHTML = '<div style="color:#e74c3c; font-style:italic; padding:6px; font-size:0.9rem;"><i class="fas fa-exclamation-triangle"></i> 此玩家已破产</div>';
+                return;
+            }
+            
+            // 分解筹码
+            let remaining = player.total;
+            const chipsToShow = [];
+            
+            // 从大到小找出最小数量的筹码组合
+            for (let i = chipValues.length - 1; i >= 0; i--) {
+                const value = chipValues[i];
+                const count = Math.floor(remaining / value);
+                if (count > 0) {
+                    chipsToShow.push({ value, count });
+                    remaining %= value;
+                }
+            }
+            
+            // 创建筹码元素
+            chipsToShow.forEach(chip => {
+                for (let i = 0; i < Math.min(chip.count, 20); i++) {
+                    const chipElement = document.createElement('div');
+                    chipElement.className = `chip chip-${chip.value}`;
+                    
+                    // 显示面值
+                    if (chip.value >= 1000) {
+                        chipElement.innerHTML = `<div class="chip-value">${chip.value >= 1000000 ? chip.value/1000000 + 'M' : chip.value/1000 + 'K'}</div>`;
+                    } else {
+                        chipElement.innerHTML = `<div class="chip-value">${chip.value}</div>`;
+                    }
+                    
+                    display.appendChild(chipElement);
+                }
+            });
+        }
+        
+        // 更新状态信息
+        function updateStatus(message) {
+            document.getElementById('statusArea').innerHTML = `<i class="fas fa-info-circle"></i> ${message}`;
+        }
+        
+        // 页面加载完成后初始化
+        window.onload = init;
+    </script>
+</body>
+</html>
