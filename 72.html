@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chip Management System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #2c3e50);
+            color: #ecf0f1;
+            min-height: 100vh;
+            padding: 6px;
+            font-size: 11px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        
+        .container {
+            max-width: 100%;
+            width: 100%;
+        }
+        
+        header {
+            text-align: center;
+            padding: 6px;
+            margin-bottom: 4px;
+            border-radius: 5px;
+            background: rgba(25, 35, 45, 0.85);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            margin-bottom: 4px;
+            color: #3498db;
+            font-size: 14px;
+            text-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+        }
+        
+        .controls {
+            background: rgba(25, 35, 45, 0.85);
+            border-radius: 5px;
+            padding: 8px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 6px;
+            color: #3498db;
+            font-size: 11px;
+        }
+        
+        .section-title i {
+            font-size: 12px;
+        }
+        
+        .score-section {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .score-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            flex: 1;
+        }
+        
+        .score-btn {
+            background: rgba(52, 152, 219, 0.3);
+            color: white;
+            border: 1px solid #3498db;
+            border-radius: 12px;
+            padding: 4px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 30px;
+            text-align: center;
+        }
+        
+        .score-btn:hover {
+            background: rgba(52, 152, 219, 0.7);
+        }
+        
+        .score-btn.active {
+            background: #e74c3c;
+            border-color: #e74c3c;
+            box-shadow: 0 0 4px rgba(231, 76, 60, 0.6);
+        }
+        
+        .current-score {
+            background: rgba(46, 204, 113, 0.2);
+            border-radius: 4px;
+            padding: 6px;
+            margin: 5px 0;
+            border: 1px solid #2ecc71;
+            font-size: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .transaction-info {
+            background: rgba(236, 240, 241, 0.1);
+            border-radius: 4px;
+            padding: 6px;
+            border: 1px solid #3498db;
+            font-size: 10px;
+            min-height: 35px;
+        }
+        
+        .custom-score-section {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+        }
+        
+        #newScore {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #3498db;
+            border-radius: 12px;
+            padding: 4px 6px;
+            color: white;
+            font-size: 10px;
+        }
+        
+        .add-score-btn {
+            background: rgba(241, 196, 15, 0.3);
+            color: white;
+            border: 1px solid #f1c40f;
+            border-radius: 12px;
+            padding: 4px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .add-score-btn:hover {
+            background: rgba(241, 196, 15, 0.7);
+        }
+        
+        .players {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .player {
+            background: rgba(44, 62, 80, 0.9);
+            border-radius: 5px;
+            padding: 6px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+        
+        .player.highlight {
+            border: 1px solid #e74c3c;
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.8);
+        }
+        
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid rgba(52, 152, 219, 0.5);
+        }
+        
+        .player-name {
+            font-size: 11px;
+            font-weight: bold;
+            color: #3498db;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            cursor: pointer;
+            padding: 2px 3px;
+            border-radius: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 60px;
+        }
+        
+        .player-name:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .player-name-input {
+            background: transparent;
+            border: 1px solid #3498db;
+            color: #3498db;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 2px;
+            border-radius: 3px;
+            width: 60px;
+        }
+        
+        .player-icon {
+            font-size: 10px;
+        }
+        
+        .total-chips {
+            font-size: 12px;
+            font-weight: bold;
+            color: #2ecc71;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+            background: rgba(0, 0, 0, 0.3);
+            min-width: 70px;
+            text-align: right;
+        }
+        
+        .total-chips input {
+            background: transparent;
+            border: 1px solid #3498db;
+            color: #2ecc71;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 2px;
+            border-radius: 2px;
+            width: 100%;
+            text-align: right;
+            font-family: inherit;
+        }
+        
+        .chips-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+            min-height: 40px;
+            padding: 3px;
+            border-radius: 4px;
+            background: rgba(30, 40, 50, 0.8);
+            justify-content: center;
+        }
+        
+        .chip {
+            position: relative;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.3),
+                        0 2px 3px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            font-weight: bold;
+            font-size: 6px;
+            overflow: hidden;
+        }
+        
+        .chip:hover {
+            transform: scale(1.1);
+        }
+        
+        .chip-value {
+            position: absolute;
+            bottom: 1px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 1px 3px;
+            border-radius: 8px;
+            font-size: 5px;
+        }
+        
+        /* Chip colors */
+        .chip-1 { background: radial-gradient(circle at 30% 30%, #ffffff, #cccccc); color: #222; }
+        .chip-2 { background: radial-gradient(circle at 30% 30%, #ff9999, #cc6666); }
+        .chip-5 { background: radial-gradient(circle at 30% 30%, #66ccff, #3399cc); }
+        .chip-10 { background: radial-gradient(circle at 30% 30%, #99ff99, #66cc66); color: #222; }
+        .chip-20 { background: radial-gradient(circle at 30% 30%, #ffcc66, #cc9933); color: #222; }
+        .chip-50 { background: radial-gradient(circle at 30% 30%, #cc99ff, #9966cc); }
+        .chip-100 { background: radial-gradient(circle at 30% 30%, #66ff66, #33cc33); color: #222; }
+        .chip-200 { background: radial-gradient(circle at 30% 30%, #ff99ff, #cc66cc); color: #222; }
+        .chip-500 { background: radial-gradient(circle at 30% 30%, #ffff66, #cccc33); color: #222; }
+        .chip-1000 { background: radial-gradient(circle at 30% 30%, #9966ff, #6600cc); }
+        .chip-2000 { background: radial-gradient(circle at 30% 30%, #ff6666, #cc0000); }
+        .chip-5000 { background: radial-gradient(circle at 30% 30%, #66ffff, #00cccc); color: #222; }
+        .chip-10000 { background: radial-gradient(circle at 30% 30%, #66ff99, #00cc66); color: #222; }
+        .chip-20000 { background: radial-gradient(circle at 30% 30%, #ff9966, #cc6600); color: #222; }
+        .chip-50000 { background: radial-gradient(circle at 30% 30%, #cc66ff, #9900cc); }
+        .chip-100000 { background: radial-gradient(circle at 30% 30%, #66cc66, #339933); color: #222; }
+        .chip-200000 { background: radial-gradient(circle at 30% 30%, #ffaa33, #cc7700); color: #222; }
+        .chip-500000 { background: radial-gradient(circle at 30% 30%, #ffcc99, #cc9966); color: #222; }
+        .chip-1000000 { background: radial-gradient(circle at 30% 30%, #3399ff, #0066cc); }
+        
+        .transaction-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .transaction-display i {
+            color: #e74c3c;
+            font-size: 10px;
+        }
+        
+        #statusArea {
+            background: rgba(231, 76, 60, 0.2);
+            border-radius: 5px;
+            padding: 6px;
+            text-align: center;
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            border: 1px solid #e74c3c;
+            box-shadow: 0 2px 5px rgba(231, 76, 60, 0.3);
+        }
+        
+        .bankrupt {
+            position: absolute;
+            top: 3px;
+            right: 4px;
+            background: #e74c3c;
+            color: white;
+            padding: 2px 5px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 7px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        
+        .chip-animation {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 0 2px rgba(255, 255, 255, 0.7);
+            animation: chipFly 0.6s forwards;
+            border: 1px solid white;
+            font-size: 6px;
+        }
+        
+        @keyframes chipFly {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            70% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0.1);
+                opacity: 0;
+            }
+        }
+        
+        .value-change {
+            position: absolute;
+            font-size: 10px;
+            font-weight: bold;
+            pointer-events: none;
+            animation: valueChange 0.8s forwards;
+            z-index: 100;
+        }
+        
+        .positive {
+            color: #2ecc71;
+        }
+        
+        .negative {
+            color: #e74c3c;
+        }
+        
+        @keyframes valueChange {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-40px);
+            }
+        }
+        
+        .player-footer {
+            margin-top: 4px;
+            text-align: center;
+            padding: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            font-size: 8px;
+        }
+        
+        .reset-button {
+            background: rgba(231, 76, 60, 0.25);
+            border: 1px solid #e74c3c;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 5px;
+            display: block;
+            width: 100%;
+        }
+        
+        .reset-button:hover {
+            background: rgba(231, 76, 60, 0.5);
+        }
+        
+        /* Compact player grid with 5 players */
+        @media (min-width: 640px) {
+            .players {
+                grid-template-columns: repeat(5, minmax(130px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-coins"></i> Chip Management System</h1>
+            <p>Track and manage player chips efficiently</p>
+        </header>
+        
+        <section id="statusArea">
+            <i class="fas fa-info-circle"></i> System ready. Select transaction amount to start
+        </section>
+        
+        <section class="controls">
+            <div class="section-title">
+                <i class="fas fa-sliders-h"></i>
+                <h2>Transaction Panel</h2>
+            </div>
+            
+            <div class="score-buttons" id="scoreButtons">
+                <!-- Buttons added by JS -->
+            </div>
+            
+            <div class="current-score" id="currentScoreDisplay">
+                <i class="fas fa-dice"></i>
+                <span>No amount selected</span>
+            </div>
+            
+            <div class="custom-score-section">
+                <input type="number" id="newScore" placeholder="Enter custom amount (e.g. 160)">
+                <button class="add-score-btn" id="addScoreBtn">
+                    <i class="fas fa-plus"></i> Add Amount
+                </button>
+            </div>
+            
+            <div class="transaction-info">
+                <div id="transactionStatus">Status: Select transaction amount</div>
+                <div class="transaction-display">
+                    <div id="transactionFrom">Sender: None</div>
+                    <i class="fas fa-exchange-alt"></i>
+                    <div id="transactionTo">Receiver: None</div>
+                </div>
+            </div>
+            
+            <button class="reset-button" id="resetAllBtn">
+                <i class="fas fa-sync-alt"></i> Reset All
+            </button>
+        </section>
+        
+        <div class="players">
+            <!-- Player 1 -->
+            <div class="player" id="player1">
+                <div class="player-header">
+                    <div class="player-name" onclick="editName(1)">
+                        <i class="fas fa-user player-icon"></i>
+                        <span id="name1">Player 1</span>
+                    </div>
+                    <div class="total-chips" onclick="editChips(1)">10000</div>
+                </div>
+                <div class="chips-display" id="chips1"></div>
+                <div class="player-footer">
+                    <i class="fas fa-hand-pointer"></i> Click to select as sender
+                </div>
+            </div>
+            
+            <!-- Player 2 -->
+            <div class="player" id="player2">
+                <div class="player-header">
+                    <div class="player-name" onclick="editName(2)">
+                        <i class="fas fa-user-alt player-icon"></i>
+                        <span id="name2">Player 2</span>
+                    </div>
+                    <div class="total-chips" onclick="editChips(2)">10000</div>
+                </div>
+                <div class="chips-display" id="chips2"></div>
+                <div class="player-footer">
+                    <i class="fas fa-hand-pointer"></i> Click to select as receiver
+                </div>
+            </div>
+            
+            <!-- Player 3 -->
+            <div class="player" id="player3">
+                <div class="player-header">
+                    <div class="player-name" onclick="editName(3)">
+                        <i class="fas fa-user-friends player-icon"></i>
+                        <span id="name3">Player 3</span>
+                    </div>
+                    <div class="total-chips" onclick="editChips(3)">10000</div>
+                </div>
+                <div class="chips-display" id="chips3"></div>
+                <div class="player-footer">
+                    <i class="fas fa-hand-pointer"></i> Click to select as receiver
+                </div>
+            </div>
+            
+            <!-- Player 4 -->
+            <div class="player" id="player4">
+                <div class="player-header">
+                    <div class="player-name" onclick="editName(4)">
+                        <i class="fas fa-user-tie player-icon"></i>
+                        <span id="name4">Player 4</span>
+                    </div>
+                    <div class="total-chips" onclick="editChips(4)">10000</div>
+                </div>
+                <div class="chips-display" id="chips4"></div>
+                <div class="player-footer">
+                    <i class="fas fa-hand-pointer"></i> Click to select as receiver
+                </div>
+            </div>
+            
+            <!-- Player 5 -->
+            <div class="player" id="player5">
+                <div class="player-header">
+                    <div class="player-name" onclick="editName(5)">
+                        <i class="fas fa-user-ninja player-icon"></i>
+                        <span id="name5">Player 5</span>
+                    </div>
+                    <div class="total-chips" onclick="editChips(5)">10000</div>
+                </div>
+                <div class="chips-display" id="chips5"></div>
+                <div class="player-footer">
+                    <i class="fas fa-hand-pointer"></i> Click to select as receiver
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Chip values including 200,000
+        const chipValues = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 
+                            10000, 20000, 50000, 100000, 200000, 500000, 1000000];
+        
+        // Players array with 5 players
+        const players = [
+            { 
+                id: 1, 
+                name: "Player 1", 
+                total: 10000, 
+                element: document.getElementById('player1'), 
+                chipsDisplay: document.getElementById('chips1'),
+                nameElement: document.getElementById('name1')
+            },
+            { 
+                id: 2, 
+                name: "Player 2", 
+                total: 10000, 
+                element: document.getElementById('player2'), 
+                chipsDisplay: document.getElementById('chips2'),
+                nameElement: document.getElementById('name2')
+            },
+            { 
+                id: 3, 
+                name: "Player 3", 
+                total: 10000, 
+                element: document.getElementById('player3'), 
+                chipsDisplay: document.getElementById('chips3'),
+                nameElement: document.getElementById('name3')
+            },
+            { 
+                id: 4, 
+                name: "Player 4", 
+                total: 10000, 
+                element: document.getElementById('player4'), 
+                chipsDisplay: document.getElementById('chips4'),
+                nameElement: document.getElementById('name4')
+            },
+            { 
+                id: 5, 
+                name: "Player 5", 
+                total: 10000, 
+                element: document.getElementById('player5'), 
+                chipsDisplay: document.getElementById('chips5'),
+                nameElement: document.getElementById('name5')
+            }
+        ];
+        
+        // Default bet amounts (with 160 as requested)
+        const scoreOptions = [10, 20, 30, 40, 50, 60, 80, 100, 120, 150, 160, 180, 200, 240, 250, 300, 320, 400, 450, 480, 500, 600, 640, 720, 750, 800, 960, 1000, 1200, 1280, 1440, 1600, 1800, 1920, 2000, 2400, 2560, 2880, 3000, 3200, 3600, 3840, 4000, 4800, 5120, 5760, 6000, 6400, 7200, 7680, 8000, 9600, 12000, 12800, 14400, 16000, 19200, 24000, 25600, 38400, 48000, 96000, 192000] ;
+        
+        // Transaction state
+        let transaction = {
+            amount: 0,
+            fromPlayer: null,
+            toPlayer: null,
+            scoreSet: false
+        };
+        
+        // Initialize system
+        function init() {
+            createScoreButtons();
+            initPlayers();
+            setupEventListeners();
+            updateStatus("System ready. Select transaction amount to start");
+        }
+        
+        // Setup all event listeners
+        function setupEventListeners() {
+            // Add click events to players
+            players.forEach(player => {
+                player.element.addEventListener('click', function() {
+                    selectPlayerForTransaction(player.id);
+                });
+            });
+            
+            // Button events
+            document.getElementById('addScoreBtn').addEventListener('click', addCustomScore);
+            document.getElementById('resetAllBtn').addEventListener('click', resetAll);
+            
+            // Enter key for custom scores
+            document.getElementById('newScore').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addCustomScore();
+                }
+            });
+        }
+        
+        // Create score selection buttons
+        function createScoreButtons() {
+            const container = document.getElementById('scoreButtons');
+            container.innerHTML = '';
+            
+            // Sort scores ascending
+            const sortedScores = [...scoreOptions].sort((a, b) => a - b);
+            
+            // Create buttons for each score
+            sortedScores.forEach(score => {
+                const button = document.createElement('button');
+                button.className = 'score-btn';
+                button.innerHTML = `<i class="fas fa-dice"></i> ${score}`;
+                button.dataset.score = score;
+                button.addEventListener('click', () => setTransactionScore(score));
+                container.appendChild(button);
+            });
+        }
+        
+        // Initialize player displays
+        function initPlayers() {
+            players.forEach(player => {
+                updatePlayerDisplay(player.id);
+            });
+        }
+        
+        // Player selection logic
+        function selectPlayerForTransaction(playerId) {
+            // Require score selection first
+            if (!transaction.scoreSet) {
+                updateStatus("Please select a transaction amount first!");
+                return;
+            }
+            
+            // First selection: sender
+            if (transaction.fromPlayer === null) {
+                transaction.fromPlayer = playerId;
+                players[playerId-1].element.classList.add('highlight');
+                updateStatus(`Selected ${players[playerId-1].name} as sender. Select receiver`);
+                document.getElementById('transactionFrom').innerHTML = `Sender: <span style="color:#e74c3c">${players[playerId-1].name}</span>`;
+            } 
+            // Second selection: receiver
+            else if (transaction.toPlayer === null && playerId !== transaction.fromPlayer) {
+                transaction.toPlayer = playerId;
+                players[playerId-1].element.classList.add('highlight');
+                document.getElementById('transactionTo').innerHTML = `Receiver: <span style="color:#2ecc71">${players[playerId-1].name}</span>`;
+                
+                // Execute transaction immediately
+                executeTransaction();
+            }
+            // Toggle off sender
+            else if (playerId === transaction.fromPlayer) {
+                players[playerId-1].element.classList.remove('highlight');
+                transaction.fromPlayer = null;
+                updateStatus("Cleared sender selection");
+                document.getElementById('transactionFrom').textContent = 'Sender: None';
+            }
+            // Toggle off receiver
+            else if (playerId === transaction.toPlayer) {
+                players[playerId-1].element.classList.remove('highlight');
+                transaction.toPlayer = null;
+                updateStatus("Cleared receiver selection");
+                document.getElementById('transactionTo').textContent = 'Receiver: None';
+            }
+            // Change receiver
+            else if (transaction.toPlayer !== null) {
+                players[transaction.toPlayer-1].element.classList.remove('highlight');
+                transaction.toPlayer = playerId;
+                players[playerId-1].element.classList.add('highlight');
+                document.getElementById('transactionTo').innerHTML = `Receiver: <span style="color:#2ecc71">${players[playerId-1].name}</span>`;
+                
+                // Execute transaction immediately
+                executeTransaction();
+            }
+        }
+        
+        // Add custom bet amount
+        function addCustomScore() {
+            const input = document.getElementById('newScore');
+            const newScore = parseInt(input.value);
+            
+            if (isNaN(newScore) || newScore <= 0) {
+                updateStatus("Error: Please enter a positive number");
+                return;
+            }
+            
+            // If score exists, select it
+            if (scoreOptions.includes(newScore)) {
+                setTransactionScore(newScore);
+                input.value = '';
+                updateStatus(`${newScore} already available. Selected`);
+                return;
+            }
+            
+            // Add the new score
+            scoreOptions.push(newScore);
+            createScoreButtons();
+            setTransactionScore(newScore);
+            
+            input.value = '';
+            updateStatus(`Added and selected: ${newScore}`);
+        }
+        
+        // Set transaction amount
+        function setTransactionScore(score) {
+            // Set amount
+            transaction.amount = score;
+            transaction.scoreSet = true;
+            
+            // Update UI
+            updateStatus(`Amount set: ${score}. Select players`);
+            
+            // Highlight active button
+            document.querySelectorAll('.score-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if(parseInt(btn.dataset.score) === score) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Update display
+            document.getElementById('currentScoreDisplay').innerHTML = `<i class="fas fa-dice"></i> Amount: <span style="color:#2ecc71">${score}</span>`;
+        }
+        
+        // Execute the transaction
+        function executeTransaction() {
+            // Validate
+            if (!transaction.scoreSet) {
+                updateStatus("Error: Select amount first!");
+                return;
+            }
+            
+            if (transaction.fromPlayer === null) {
+                updateStatus("Error: Select sender!");
+                return;
+            }
+            
+            if (transaction.toPlayer === null) {
+                updateStatus("Error: Select receiver!");
+                return;
+            }
+            
+            if (transaction.fromPlayer === transaction.toPlayer) {
+                updateStatus("Error: Cannot select same player!");
+                return;
+            }
+            
+            const fromPlayer = players[transaction.fromPlayer - 1];
+            const toPlayer = players[transaction.toPlayer - 1];
+            
+            // Check for insufficient chips
+            if (fromPlayer.total < transaction.amount) {
+                // Handle bankruptcy: transfer all remaining chips
+                animateTransaction(fromPlayer, toPlayer, fromPlayer.total);
+                
+                const transferAmount = fromPlayer.total;
+                fromPlayer.total = 0;
+                toPlayer.total += transferAmount;
+                
+                updatePlayerDisplay(transaction.fromPlayer);
+                updatePlayerDisplay(transaction.toPlayer);
+                
+                createBankruptSign(fromPlayer);
+                
+                updateStatus(`Transaction: ${fromPlayer.name} sent all chips (${transferAmount}) to ${toPlayer.name}!`);
+            } else {
+                // Normal transaction
+                animateTransaction(fromPlayer, toPlayer, transaction.amount);
+                
+                fromPlayer.total -= transaction.amount;
+                toPlayer.total += transaction.amount;
+                
+                updatePlayerDisplay(transaction.fromPlayer);
+                updatePlayerDisplay(transaction.toPlayer);
+                
+                updateStatus(`Transaction: ${transaction.amount} from ${fromPlayer.name} to ${toPlayer.name}`);
+            }
+            
+            // Clear selections
+            resetPlayers();
+        }
+        
+        // Add bankruptcy indicator
+        function createBankruptSign(player) {
+            if (document.querySelector(`#player${player.id} .bankrupt`)) return;
+            
+            const bankruptSign = document.createElement('div');
+            bankruptSign.className = 'bankrupt';
+            bankruptSign.innerHTML = '<i class="fas fa-skull"></i> Bankrupt';
+            player.element.appendChild(bankruptSign);
+        }
+        
+        // Animate chip transfer
+        function animateTransaction(fromPlayer, toPlayer, amount) {
+            // Calculate positions
+            const fromRect = fromPlayer.element.getBoundingClientRect();
+            const toRect = toPlayer.element.getBoundingClientRect();
+            
+            const startX = fromRect.left + fromRect.width/2;
+            const startY = fromRect.top + fromRect.height/2;
+            const endX = toRect.left + toRect.width/2;
+            const endY = toRect.top + toRect.height/2;
+            
+            // Create flying chips (number based on amount)
+            const chipsToCreate = Math.min(Math.floor(amount/100) + 1, 5);
+            
+            for (let i = 0; i < chipsToCreate; i++) {
+                const animatedChip = document.createElement('div');
+                animatedChip.className = 'chip-animation chip-500';
+                animatedChip.textContent = i === chipsToCreate - 1 ? amount : ' ';
+                animatedChip.style.left = `${startX}px`;
+                animatedChip.style.top = `${startY}px`;
+                
+                // Add randomness to path
+                const tx = endX - startX + (Math.random() * 40 - 20);
+                const ty = endY - startY + (Math.random() * 40 - 20);
+                animatedChip.style.setProperty('--tx', `${tx}px`);
+                animatedChip.style.setProperty('--ty', `${ty}px`);
+                
+                document.body.appendChild(animatedChip);
+                
+                // Remove animation element after completion
+                setTimeout(() => {
+                    if (document.body.contains(animatedChip)) {
+                        document.body.removeChild(animatedChip);
+                    }
+                }, 600);
+            }
+            
+            // Create value change animations
+            createValueChangeAnimation(fromPlayer, -amount, '#e74c3c');
+            createValueChangeAnimation(toPlayer, amount, '#2ecc71');
+        }
+        
+        // Create value change animation
+        function createValueChangeAnimation(player, amount, color) {
+            const rect = player.element.getBoundingClientRect();
+            
+            const valueChange = document.createElement('div');
+            valueChange.className = `value-change ${amount > 0 ? 'positive' : 'negative'}`;
+            valueChange.textContent = amount > 0 ? `+${amount}` : amount;
+            valueChange.style.color = color;
+            valueChange.style.left = `${rect.left + rect.width - 60}px`;
+            valueChange.style.top = `${rect.top + rect.height/2}px`;
+            
+            document.body.appendChild(valueChange);
+            
+            // Clean up animation after completion
+            setTimeout(() => {
+                if (document.body.contains(valueChange)) {
+                    document.body.removeChild(valueChange);
+                }
+            }, 800);
+        }
+        
+        // Reset player selections
+        function resetPlayers() {
+            players.forEach(player => {
+                player.element.classList.remove('highlight');
+            });
+            
+            transaction.fromPlayer = null;
+            transaction.toPlayer = null;
+            
+            document.getElementById('transactionFrom').textContent = 'Sender: None';
+            document.getElementById('transactionTo').textContent = 'Receiver: None';
+            
+            updateStatus("Selections cleared. Amount: " + transaction.amount);
+        }
+        
+        // Reset entire system
+        function resetAll() {
+            // Clear highlights and bankruptcy
+            players.forEach(player => {
+                player.element.classList.remove('highlight');
+                const bankruptSign = document.querySelector(`#player${player.id} .bankrupt`);
+                if (bankruptSign) bankruptSign.remove();
+            });
+            
+            // Reset transaction state
+            transaction.amount = 0;
+            transaction.fromPlayer = null;
+            transaction.toPlayer = null;
+            transaction.scoreSet = false;
+            
+            // Reset UI elements
+            document.querySelectorAll('.score-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById('transactionFrom').textContent = 'Sender: None';
+            document.getElementById('transactionTo').textContent = 'Receiver: None';
+            document.getElementById('currentScoreDisplay').innerHTML = `<i class="fas fa-dice"></i> No amount selected`;
+            
+            // Reset all players to default state
+            players.forEach(player => {
+                player.total = 10000;
+                updatePlayerDisplay(player.id);
+            });
+            
+            updateStatus("System reset. Select amount to start");
+        }
+        
+        // Edit player name
+        function editName(playerId) {
+            const player = players[playerId - 1];
+            const element = player.nameElement;
+            const currentName = player.name;
+            
+            // Create input field
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentName;
+            input.className = 'player-name-input';
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    saveName(playerId, input.value);
+                } else if (e.key === 'Escape') {
+                    cancelNameEdit(playerId, currentName);
+                }
+            };
+            input.onblur = () => {
+                saveName(playerId, input.value);
+            };
+            
+            // Replace display
+            element.innerHTML = '';
+            element.appendChild(input);
+            input.focus();
+            input.select();
+        }
+        
+        // Save player name
+        function saveName(playerId, value) {
+            const player = players[playerId - 1];
+            player.name = value || `Player ${playerId}`;
+            
+            // Update display
+            const element = player.nameElement;
+            element.innerHTML = player.name;
+            
+            // Update transaction display if selected
+            if (transaction.fromPlayer === playerId) {
+                document.getElementById('transactionFrom').innerHTML = `Sender: <span style="color:#e74c3c">${player.name}</span>`;
+            }
+            
+            if (transaction.toPlayer === playerId) {
+                document.getElementById('transactionTo').innerHTML = `Receiver: <span style="color:#2ecc71">${player.name}</span>`;
+            }
+        }
+        
+        // Edit chip count
+        function editChips(playerId) {
+            const player = players[playerId - 1];
+            const element = document.querySelector(`#player${playerId} .total-chips`);
+            
+            // Create input field
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.value = player.total;
+            input.min = 0;
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    saveChips(playerId, input.value);
+                } else if (e.key === 'Escape') {
+                    cancelEdit(playerId, player.total);
+                }
+            };
+            input.onblur = () => {
+                saveChips(playerId, input.value);
+            };
+            
+            // Replace display
+            element.textContent = '';
+            element.appendChild(input);
+            input.focus();
+            input.select();
+        }
+        
+        // Save chip count
+        function saveChips(playerId, value) {
+            const total = parseInt(value) || 0;
+            const player = players[playerId - 1];
+            player.total = total >= 0 ? total : 0;
+            
+            // Remove bankrupt sign if applicable
+            const bankruptSign = document.querySelector(`#player${playerId} .bankrupt`);
+            if (bankruptSign && player.total > 0) {
+                bankruptSign.remove();
+            }
+            
+            // Update display
+            updatePlayerDisplay(playerId);
+        }
+        
+        // Update player UI display
+        function updatePlayerDisplay(playerId) {
+            const player = players[playerId - 1];
+            const display = player.chipsDisplay;
+            
+            // Update total display
+            const totalElement = document.querySelector(`#player${playerId} .total-chips`);
+            totalElement.textContent = player.total;
+            
+            // Clear chips display
+            display.innerHTML = '';
+            
+            // Handle bankrupt player
+            if (player.total === 0) {
+                display.innerHTML = '<div style="color:#e74c3c; font-style:italic; padding:3px; font-size:0.7rem;"><i class="fas fa-exclamation-triangle"></i> Bankrupt</div>';
+                return;
+            }
+            
+            // Calculate chip distribution
+            let remaining = player.total;
+            const chipsToShow = [];
+            
+            // Find optimal chip distribution
+            for (let i = chipValues.length - 1; i >= 0; i--) {
+                const value = chipValues[i];
+                const count = Math.floor(remaining / value);
+                if (count > 0) {
+                    chipsToShow.push({ value, count });
+                    remaining %= value;
+                }
+            }
+            
+            // Create chips (limited to 10 per value)
+            chipsToShow.forEach(chip => {
+                const displayCount = Math.min(chip.count, 10);
+                for (let i = 0; i < displayCount; i++) {
+                    const chipElement = document.createElement('div');
+                    chipElement.className = `chip chip-${chip.value}`;
+                    
+                    // Display value abbreviation for large chips
+                    if (chip.value >= 1000) {
+                        chipElement.innerHTML = `<div class="chip-value">${chip.value >= 1000000 ? chip.value/1000000 + 'M' : chip.value/1000 + 'K'}</div>`;
+                    } else {
+                        chipElement.innerHTML = `<div class="chip-value">${chip.value}</div>`;
+                    }
+                    
+                    display.appendChild(chipElement);
+                }
+            });
+        }
+        
+        // Update status message
+        function updateStatus(message) {
+            document.getElementById('statusArea').innerHTML = `<i class="fas fa-info-circle"></i> ${message}`;
+        }
+        
+        // Initialize system when page loads
+        window.onload = init;
+    </script>
+</body>
+</html>
