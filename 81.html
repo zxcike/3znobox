@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小牌速决 - 扑克事件抽取器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', 'Arial Black', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0c2461, #1e3799);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            transition: filter 0.5s ease;
+        }
+        
+        body.negative {
+            filter: invert(1) hue-rotate(180deg) contrast(0.8);
+        }
+        
+        .header {
+            margin: 10px 0 30px;
+            text-align: center;
+        }
+        
+        .title {
+            font-size: 4.2rem;
+            color: #FFF;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.9), 
+                         0 0 30px rgba(255, 140, 0, 0.7),
+                         4px 4px 0 #000,
+                         -1px -1px 0 #000,  
+                         1px -1px 0 #000,
+                         -1px 1px 0 #000,
+                         1px 1px 0 #000;
+            letter-spacing: 4px;
+            font-weight: bold;
+            animation: titleGlow 2.5s infinite alternate;
+            position: relative;
+            padding: 0 30px;
+        }
+        
+        .title::after {
+            content: "";
+            position: absolute;
+            bottom: -15px;
+            left: 30%;
+            width: 40%;
+            height: 8px;
+            background: linear-gradient(90deg, transparent, #ffd700, transparent);
+            border-radius: 50%;
+            filter: blur(2px);
+        }
+        
+        .event-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 20px;
+            margin: 20px 0 40px;
+            width: 95%;
+            max-width: 1000px;
+        }
+        
+        .grid-cell {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            height: 170px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+            border: 4px solid #ffcc00;
+            transform-style: preserve-3d;
+            perspective: 800px;
+        }
+        
+        .grid-cell.empty {
+            background: rgba(255, 255, 255, 0.15);
+            border: 3px dashed rgba(255, 255, 255, 0.6);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        .grid-cell .round-number {
+            position: absolute;
+            top: 8px;
+            left: 10px;
+            background: linear-gradient(45deg, #ff416c, #ff4b2b);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+            z-index: 2;
+        }
+        
+        .event-content {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #1a237e;
+            line-height: 1.4;
+            padding: 10px 0;
+            transition: all 0.3s ease;
+            transform: translateZ(30px);
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
+        }
+        
+        .card-icon {
+            font-size: 1.8em;
+            margin: 0 4px;
+            vertical-align: middle;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 40px;
+            margin: 20px 0 40px;
+        }
+        
+        .btn {
+            min-width: 180px;
+            padding: 18px 35px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .draw-btn {
+            background: linear-gradient(45deg, #4CAF50, #2E8B57);
+            color: white;
+        }
+        
+        .reset-btn {
+            background: linear-gradient(45deg, #F44336, #B71C1C);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-7px) scale(1.05);
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.5);
+        }
+        
+        .btn:active {
+            transform: translateY(2px);
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            transition: all 0.8s;
+            z-index: -1;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .event-display {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(8, 15, 40, 0.98);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .event-display.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .event-text {
+            color: white;
+            font-size: 6.8rem;
+            text-align: center;
+            padding: 20px;
+            max-width: 90%;
+            text-shadow: 0 0 25px rgba(255, 215, 0, 0.9),
+                         0 0 50px rgba(255, 140, 0, 0.7);
+            animation: textGlow 1.5s infinite alternate, float 3s infinite ease-in-out;
+        }
+        
+        .reversed-notice {
+            position: fixed;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 215, 0, 0.95);
+            color: #B71C1C;
+            font-weight: bold;
+            font-size: 1.7rem;
+            transform: translateY(150px);
+            transition: transform 0.6s ease;
+            z-index: 90;
+            display: none;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.4);
+        }
+        
+        .reversed-notice i {
+            margin-right: 12px;
+            font-size: 2rem;
+            vertical-align: middle;
+        }
+        
+        .reversed-notice.show {
+            display: block;
+            transform: translateY(0);
+        }
+        
+        .effect-reversed .event-content {
+            color: #D32F2F;
+            font-weight: 900;
+            transform: scale(1.05);
+        }
+        
+        .effect-reversed .grid-cell {
+            border-color: #D32F2F;
+            animation: shake 0.8s ease;
+            box-shadow: 0 10px 30px rgba(211, 47, 47, 0.3);
+        }
+        
+        .grid-cell:nth-child(1) .event-content {
+            color: #e65100;
+            font-size: 1.5rem;
+        }
+        
+        .grid-cell:nth-child(1) {
+            background: linear-gradient(135deg, #fffde7, #ffd180);
+            border-color: #ffab40;
+            animation: none;
+        }
+        
+        @keyframes shake {
+            0% { transform: translateX(0) rotate(0); }
+            15% { transform: translateX(-15px) rotate(-3deg); }
+            30% { transform: translateX(12px) rotate(3deg); }
+            45% { transform: translateX(-12px) rotate(-3deg); }
+            60% { transform: translateX(12px) rotate(2deg); }
+            75% { transform: translateX(-8px) rotate(-1deg); }
+            90% { transform: translateX(6px) rotate(1deg); }
+            100% { transform: translateX(0) rotate(0); }
+        }
+        
+        @keyframes titleGlow {
+            0% { 
+                text-shadow: 0 0 15px rgba(255, 215, 0, 0.9), 
+                             0 0 30px rgba(255, 140, 0, 0.7),
+                             4px 4px 0 #000;
+            }
+            100% { 
+                text-shadow: 0 0 25px rgba(255, 215, 0, 0.9), 
+                             0 0 50px rgba(255, 140, 0, 0.7),
+                             4px 4px 0 #000;
+            }
+        }
+        
+        @keyframes textGlow {
+            0% { 
+                text-shadow: 0 0 25px rgba(255, 215, 0, 0.9),
+                             0 0 50px rgba(255, 140, 0, 0.7);
+            }
+            100% { 
+                text-shadow: 0 0 45px rgba(255, 215, 0, 0.9), 
+                             0 0 90px rgba(255, 140, 0, 0.7);
+            }
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0); }
+        }
+        
+        .pulse {
+            animation: pulse 0.7s infinite alternate;
+        }
+        
+        @keyframes pulse {
+            0% { 
+                transform: scale(1);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            }
+            100% { 
+                transform: scale(1.05);
+                box-shadow: 0 15px 35px rgba(255, 100, 0, 0.6);
+            }
+        }
+        
+        .flashing-border {
+            animation: flashBorder 1s infinite;
+        }
+        
+        @keyframes flashBorder {
+            0%, 100% { border-color: #ffcc00; }
+            50% { border-color: #ff5722; }
+        }
+        
+        @media (max-width: 768px) {
+            .event-grid {
+                grid-template-columns: repeat(2, 1fr);
+                grid-gap: 15px;
+            }
+            
+            .title {
+                font-size: 2.8rem;
+            }
+            
+            .grid-cell {
+                height: 180px;
+                font-size: 1rem;
+            }
+            
+            .event-text {
+                font-size: 3.2rem;
+            }
+            
+            .buttons {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .btn {
+                min-width: 250px;
+            }
+            
+            .event-content {
+                font-size: 1.2rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .event-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="title">小牌速决</h1>
+    </div>
+    
+    <div class="event-grid" id="eventGrid">
+        <div class="grid-cell">
+            <div class="round-number">1</div>
+            <div class="event-content">第1轮，不能亮牌</div>
+        </div>
+        <div class="grid-cell empty">待抽取</div>
+        <div class="grid-cell empty">待抽取</div>
+        <div class="grid-cell empty">待抽取</div>
+        <div class="grid-cell empty">待抽取</div>
+        <div class="grid-cell empty">待抽取</div>
+    </div>
+    
+    <div class="buttons">
+        <button class="btn draw-btn" id="drawBtn">
+            <i class="fas fa-random"></i> 抽取事件
+        </button>
+        <button class="btn reset-btn" id="resetBtn">
+            <i class="fas fa-redo"></i> 重置游戏
+        </button>
+    </div>
+    
+    <div class="event-display" id="eventDisplay">
+        <div class="event-text" id="eventText"></div>
+    </div>
+    
+    <div class="reversed-notice" id="reversedNotice">
+        <i class="fas fa-exclamation-triangle"></i> 效果逆转事件触发！所有事件描述已反转
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 事件列表
+            const events = [
+                '不记红桃♥️',
+                '不记黑桃♠️',
+                '不记方片♦️',
+                '不记梅花♣️',
+                '不记同点',
+                '不记顺子',
+                '不记JQK',
+                '大小逆转',
+                '效果逆转',
+                '输赢翻倍',
+                '不记5,10',
+                '不记3,6,9',
+                '摸牌+1'
+            ];
+            
+            const ivent = [
+                '红桃♥️记2遍',
+                '黑桃♠️记2遍',
+                '方片♦️记2遍',
+                '梅花♣️记2遍',
+                '同点记2遍',
+                '顺子记2遍',
+                'JQK记2遍',
+                '大小不逆转',
+                '效果逆转(已实现)',
+                '输赢减半',
+                '5,10记2遍',
+                '3,6,9记2遍',
+                '不用摸牌'
+            ];
+            
+            // 获取DOM元素
+            const drawBtn = document.getElementById('drawBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const eventGrid = document.getElementById('eventGrid');
+            const eventDisplay = document.getElementById('eventDisplay');
+            const eventText = document.getElementById('eventText');
+            const reversedNotice = document.getElementById('reversedNotice');
+            const body = document.body;
+            
+            // 游戏状态变量
+            let isReversed = false;
+            let isNegative = false; // 大小逆转状态
+            let history = []; // 存储已抽取的事件索引
+            let available = [...Array(13).keys()]; // 0到12的数组
+            
+            // 初始化游戏
+            function initGame() {
+                isReversed = false;
+                isNegative = false;
+                history = [];
+                available = [...Array(13).keys()];
+                body.classList.remove('negative');
+                
+                // 重置网格显示
+                const cells = eventGrid.querySelectorAll('.grid-cell');
+                
+                // 第一个位置为固定第一轮
+                cells[0].innerHTML = `
+                    <div class="round-number">1</div>
+                    <div class="event-content">第1轮，不能亮牌</div>
+                `;
+                cells[0].className = 'grid-cell';
+                
+                // 其余位置重置为空
+                for (let i = 1; i < 6; i++) {
+                    cells[i].className = 'grid-cell empty';
+                    cells[i].innerHTML = '待抽取';
+                }
+                
+                // 隐藏逆转通知
+                reversedNotice.classList.remove('show');
+                eventGrid.classList.remove('effect-reversed');
+            }
+            
+            // 抽取新事件
+            function drawEvent() {
+                if (available.length === 0 || history.length >= 5) {
+                    alert('事件已全部抽完，请点击重置游戏重新开始！');
+                    return;
+                }
+                
+                // 禁用按钮防止多次点击
+                drawBtn.disabled = true;
+                resetBtn.disabled = true;
+                
+                // 随机选择事件
+                const randomIndex = Math.floor(Math.random() * available.length);
+                const eventIndex = available[randomIndex];
+                available.splice(randomIndex, 1);
+                
+                // 记录历史
+                history.push(eventIndex);
+                
+                // 检查是否为效果逆转事件（索引8）
+                const isReverseEvent = eventIndex === 8;
+                
+                // 检查是否为大小逆转事件（索引7）
+                if (eventIndex === 7) {
+                    isNegative = true;
+                    body.classList.add('negative');
+                }
+                
+                // 全屏显示事件文本（显示前反转效果还未应用）
+                showFullscreenEvent(
+                    isReversed ? ivent[eventIndex] : events[eventIndex], 
+                    isReverseEvent
+                );
+                
+                // 2秒后更新网格显示并启用按钮
+                setTimeout(() => {
+                    // 如果抽到效果逆转事件，更新游戏状态
+                    if (isReverseEvent) {
+                        isReversed = true;
+                        eventGrid.classList.add('effect-reversed');
+                        showReversedNotice();
+                    }
+                    
+                    updateGrid();
+                    
+                    // 启用按钮
+                    drawBtn.disabled = false;
+                    resetBtn.disabled = false;
+                }, 2000);
+            }
+            
+            // 全屏显示事件动画
+            function showFullscreenEvent(text, isSpecial) {
+                eventText.textContent = text;
+                
+                if (isSpecial) {
+                    eventText.style.color = '#FF5722';
+                } else {
+                    eventText.style.color = '#FFFFFF';
+                }
+                
+                eventDisplay.classList.add('show');
+                
+                // 2秒后自动隐藏
+                setTimeout(() => {
+                    eventDisplay.classList.remove('show');
+                }, 2000);
+            }
+            
+            // 显示逆转通知
+            function showReversedNotice() {
+                reversedNotice.classList.add('show');
+                
+                // 10秒后自动隐藏
+                setTimeout(() => {
+                    reversedNotice.classList.remove('show');
+                }, 10000);
+            }
+            
+            // 更新网格显示
+            function updateGrid() {
+                const cells = eventGrid.querySelectorAll('.grid-cell');
+                
+                // 更新第一个位置（保持不变）
+                cells[0].innerHTML = `
+                    <div class="round-number">1</div>
+                    <div class="event-content">第1轮，不能亮牌</div>
+                `;
+                
+                // 更新已抽取的位置（位置1显示第2轮事件，以此类推）
+                for (let i = 0; i < history.length; i++) {
+                    const eventIndex = history[i];
+                    let displayText;
+                    
+                    if (isReversed) {
+                        displayText = ivent[eventIndex];
+                    } else {
+                        displayText = events[eventIndex];
+                    }
+                    
+                    // 对应网格位置为i+1
+                    const cellIndex = i + 1;
+                    cells[cellIndex].className = 'grid-cell';
+                    cells[cellIndex].innerHTML = `
+                        <div class="round-number">${i+2}</div>
+                        <div class="event-content">${displayText}</div>
+                    `;
+                    
+                    // 如果是大小逆转事件
+                    if (eventIndex === 7) {
+                        cells[cellIndex].classList.add('flashing-border');
+                    }
+                    
+                    // 添加动画效果
+                    cells[cellIndex].classList.add('pulse');
+                    setTimeout(() => {
+                        cells[cellIndex].classList.remove('pulse');
+                    }, 1000);
+                }
+                
+                // 将剩余位置重置为空
+                for (let i = history.length + 1; i < 6; i++) {
+                    cells[i].className = 'grid-cell empty';
+                    cells[i].innerHTML = '待抽取';
+                }
+            }
+            
+            // 事件监听
+            drawBtn.addEventListener('click', drawEvent);
+            resetBtn.addEventListener('click', initGame);
+            
+            // 初始化游戏
+            initGame();
+        });
+    </script>
+</body>
+</html>
