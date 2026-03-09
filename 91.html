@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数字相关性挑战</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f0f2f5;
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .game-container {
+            width: 100%;
+            max-width: 850px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            position: relative;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .display-toggle {
+            background-color: #4a6fa5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.2s;
+            min-width: 60px;
+        }
+        
+        .display-toggle:hover {
+            background-color: #3a5985;
+        }
+        
+        .attempts {
+            font-size: 20px;
+            color: #666;
+        }
+        
+        .numbers-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .number-box {
+            width: 100%;
+            max-width: 300px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            text-align: center;
+            font-size: 28px;
+            color: #2c3e50;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        
+        .number-box:hover {
+            background-color: #e8f4ff;
+            border-color: #4a6fa5;
+        }
+        
+        .number-box.selected {
+            background-color: #d4e6ff;
+            border-color: #2c5aa0;
+            transform: scale(1.02);
+        }
+        
+        .score-display {
+            text-align: center;
+            font-size: 24px;
+            color: #2c3e50;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .buttons-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .submit-btn, .quick-restart-btn {
+            width: 180px;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .submit-btn {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .submit-btn:hover {
+            background-color: #27ae60;
+        }
+        
+        .submit-btn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .quick-restart-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .quick-restart-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        .result-screen {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .score-chart {
+            width: 100%;
+            height: 300px;
+            margin: 30px 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 20px;
+        }
+        
+        .chart-bar {
+            width: 60px;
+            background-color: #4a6fa5;
+            border-radius: 8px 8px 0 0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        
+        .bar-value {
+            position: absolute;
+            top: -30px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .bar-label {
+            padding: 8px 0;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .result-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .result-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .restart-btn {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .share-btn {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .result-score {
+            font-size: 36px;
+            color: #2c3e50;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        
+        .instructions {
+            color: #666;
+            font-size: 16px;
+            text-align: center;
+            margin-top: 20px;
+            line-height: 1.5;
+        }
+        
+        /* 折线图容器样式 */
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin-bottom: 20px;
+            display: none;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #fcfcfc;
+            padding: 10px;
+        }
+        
+        #line-chart {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* 图表相关样式 */
+        .chart-title {
+            text-align: center;
+            font-size: 18px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 15px;
+            }
+            
+            .number-box {
+                font-size: 24px;
+                padding: 15px;
+            }
+            
+            .score-display {
+                font-size: 20px;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+            
+            .buttons-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .submit-btn, .quick-restart-btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+        
+        /* 结果图表样式 */
+        .result-info {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .result-item {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            min-width: 200px;
+        }
+        
+        .result-item h3 {
+            margin-bottom: 10px;
+            color: #4a6fa5;
+        }
+        
+        .result-item-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        /* 成绩等级样式 */
+        .grade-container {
+            margin: 20px 0;
+        }
+        
+        .grade {
+            font-size: 80px;
+            font-weight: bold;
+            font-family: 'Arial Black', sans-serif;
+            margin: 10px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* 成绩等级颜色 */
+        .grade-D { color: #888888; }
+        .grade-C { color: #27ae60; }
+        .grade-B { color: #2980b9; }
+        .grade-A { color: #9b59b6; }
+        .grade-S, .grade-S-plus, .grade-SS, .grade-SS-plus, .grade-SSS, .grade-SSS-plus { 
+            color: #f1c40f; 
+            text-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+        }
+        .grade-phi { 
+            background: linear-gradient(45deg, #ff0000, #ff8800, #ffff00, #00ff00, #0088ff, #8800ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        
+        /* 结果界面背景色（根据等级） */
+        .result-bg-D { background-color: #f8f8f8; }
+        .result-bg-C { background-color: #f0f9f0; }
+        .result-bg-B { background-color: #f0f5fb; }
+        .result-bg-A { background-color: #f8f0f8; }
+        .result-bg-S, .result-bg-S-plus, .result-bg-SS, .result-bg-SS-plus, .result-bg-SSS, .result-bg-SSS-plus { 
+            background-color: #fff9e6; 
+        }
+        .result-bg-phi { 
+            background-color: #ffe6e6; 
+        }
+        
+        /* 等级描述样式 */
+        .grade-desc {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- 游戏主界面 -->
+        <div id="game-screen">
+            <div class="header">
+                <div class="attempts" id="attempts">20</div>
+                <button class="display-toggle" id="toggle-display">3</button>
+            </div>
+            
+            <div class="chart-container" id="chart-container">
+                <div class="chart-title">X-Y 函数关系图</div>
+                <canvas id="line-chart"></canvas>
+            </div>
+            
+            <div class="numbers-container" id="numbers-container">
+                <!-- 5个数字将通过JavaScript动态生成 -->
+            </div>
+            
+            <div class="score-display" id="score-display">0.00</div>
+            
+            <div class="buttons-container">
+                <button class="submit-btn" id="submit-btn">提交</button>
+                <button class="quick-restart-btn" id="quick-restart-btn">快速重开</button>
+            </div>
+            
+            <div class="instructions">
+                点击任意数字可重新生成该数字（20次机会）<br>
+                右上角按钮可在3位小数、6位小数和折线图间切换
+            </div>
+        </div>
+        
+        <!-- 结果界面 -->
+        <div class="result-screen" id="result-screen">
+            <h2>游戏结果</h2>
+            <div class="result-score" id="final-score">0.00</div>
+            
+            <div class="grade-container">
+                <div class="grade-desc">成绩等级</div>
+                <div class="grade" id="grade">D</div>
+            </div>
+            
+            <div class="score-chart" id="score-chart">
+                <!-- 图表将通过JavaScript动态生成 -->
+            </div>
+            
+            <div class="result-info" id="result-info">
+                <!-- 相关系数和极差信息 -->
+            </div>
+            
+            <div class="result-buttons">
+                <button class="result-btn restart-btn" id="restart-btn">重新开始</button>
+                <button class="result-btn share-btn" id="share-btn">分享结果</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 游戏状态
+        let gameState = {
+            numbers: [],
+            attempts: 20,
+            displayMode: 3, // 3: 3位小数, 6: 6位小数, 'chart': 折线图
+            score: 0,
+            submitted: false
+        };
+        
+        // 特殊格式化|r|的函数
+        function formatCorrelation(r) {
+            // 将r转换为字符串
+            let rStr = r.toFixed(10); // 先取10位小数确保精度
+            
+            // 如果r是0，直接返回"0.00"
+            if (r === 0) return "0.00";
+            
+            // 移除末尾的0
+            rStr = parseFloat(rStr).toString();
+            
+            // 检查小数点后是否有连续3个或更多的9
+            const decimalPart = rStr.split('.')[1] || '';
+            
+            // 查找连续9的位置
+            const match = decimalPart.match(/9{3,}/);
+            
+            if (match) {
+                // 找到连续9的开始位置
+                const startIndex = match.index;
+                // 获取连续9的长度
+                const nineLength = match[0].length;
+                // 计算要保留的小数位数：连续9开始位置 + 连续9的长度 + 2
+                const keepDecimals = startIndex + nineLength + 2;
+                
+                // 保留到连续9之后2位
+                return r.toFixed(Math.min(keepDecimals, 10));
+            } else {
+                // 没有连续3个9，保留2位小数
+                return r.toFixed(2);
+            }
+        }
+        
+        // 根据得分获取等级和背景色
+        function getGradeInfo(score) {
+            if (score < 0.5) {
+                return { grade: "D", colorClass: "grade-D", bgClass: "result-bg-D", desc: "有待提高" };
+            } else if (score < 1) {
+                return { grade: "C", colorClass: "grade-C", bgClass: "result-bg-C", desc: "合格" };
+            } else if (score < 1.5) {
+                return { grade: "B", colorClass: "grade-B", bgClass: "result-bg-B", desc: "良好" };
+            } else if (score < 2) {
+                return { grade: "A", colorClass: "grade-A", bgClass: "result-bg-A", desc: "优秀" };
+            } else if (score < 2.25) {
+                return { grade: "S", colorClass: "grade-S", bgClass: "result-bg-S", desc: "杰出" };
+            } else if (score < 2.5) {
+                return { grade: "S+", colorClass: "grade-S-plus", bgClass: "result-bg-S-plus", desc: "卓越" };
+            } else if (score < 2.75) {
+                return { grade: "SS", colorClass: "grade-SS", bgClass: "result-bg-SS", desc: "超凡" };
+            } else if (score < 3) {
+                return { grade: "SS+", colorClass: "grade-SS-plus", bgClass: "result-bg-SS-plus", desc: "完美" };
+            } else if (score < 3.25) {
+                return { grade: "SSS", colorClass: "grade-SSS", bgClass: "result-bg-SSS", desc: "传奇" };
+            } else if (score < 3.5) {
+                return { grade: "SSS+", colorClass: "grade-SSS-plus", bgClass: "result-bg-SSS-plus", desc: "神话" };
+            } else {
+                return { grade: "φ", colorClass: "grade-phi", bgClass: "result-bg-phi", desc: "超越极限" };
+            }
+        }
+        
+        // 初始化游戏
+        function initGame() {
+            // 生成5个随机6位小数
+            gameState.numbers = [];
+            for (let i = 0; i < 5; i++) {
+                gameState.numbers.push(generateRandomNumber());
+            }
+            
+            // 重置游戏状态
+            gameState.attempts = 20;
+            gameState.displayMode = 3; // 默认3位小数显示
+            gameState.score = calculateScore();
+            gameState.submitted = false;
+            
+            // 更新UI
+            updateNumbersDisplay();
+            updateAttemptsDisplay();
+            updateScoreDisplay();
+            updateToggleButton();
+            
+            // 显示游戏界面，隐藏结果界面
+            document.getElementById('game-screen').style.display = 'block';
+            document.getElementById('result-screen').style.display = 'none';
+            
+            // 启用提交按钮
+            document.getElementById('submit-btn').disabled = false;
+        }
+        
+        // 生成随机6位小数
+        function generateRandomNumber() {
+            return parseFloat(Math.random().toFixed(6));
+        }
+        
+        // 更新数字显示
+        function updateNumbersDisplay() {
+            const container = document.getElementById('numbers-container');
+            container.innerHTML = '';
+            
+            // 根据显示模式决定显示内容
+            if (gameState.displayMode === 'chart') {
+                // 显示折线图，隐藏数字
+                document.getElementById('chart-container').style.display = 'block';
+                container.style.display = 'none';
+                drawLineChart();
+            } else {
+                // 显示数字，隐藏折线图
+                document.getElementById('chart-container').style.display = 'none';
+                container.style.display = 'flex';
+                
+                // 创建数字显示
+                gameState.numbers.forEach((num, index) => {
+                    const numberBox = document.createElement('div');
+                    numberBox.className = 'number-box';
+                    numberBox.dataset.index = index;
+                    
+                    // 根据当前显示设置格式化数字
+                    let displayNum;
+                    if (gameState.displayMode === 3) {
+                        // 去尾法保留3位小数
+                        displayNum = Math.floor(num * 1000) / 1000;
+                    } else {
+                        displayNum = num;
+                    }
+                    
+                    numberBox.textContent = displayNum.toFixed(gameState.displayMode);
+                    numberBox.addEventListener('click', () => rerollNumber(index));
+                    container.appendChild(numberBox);
+                });
+            }
+        }
+        
+        // 绘制折线图
+        function drawLineChart() {
+            const canvas = document.getElementById('line-chart');
+            const ctx = canvas.getContext('2d');
+            
+            // 设置Canvas尺寸
+            const container = document.getElementById('chart-container');
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            
+            // 设置canvas尺寸（考虑像素密度）
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = containerWidth * dpr;
+            canvas.height = (containerHeight - 30) * dpr; // 减去标题高度
+            canvas.style.width = containerWidth + 'px';
+            canvas.style.height = (containerHeight - 30) + 'px';
+            ctx.scale(dpr, dpr);
+            
+            // 清除画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 实际绘制区域的尺寸
+            const width = containerWidth;
+            const height = containerHeight - 30;
+            const padding = 40;
+            const chartWidth = width - 2 * padding;
+            const chartHeight = height - 2 * padding;
+            
+            // 绘制坐标轴
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 2;
+            
+            // X轴
+            ctx.beginPath();
+            ctx.moveTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding);
+            ctx.stroke();
+            
+            // Y轴
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, height - padding);
+            ctx.stroke();
+            
+            // 坐标轴标签
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // X轴标签 (1-5)
+            for (let i = 1; i <= 5; i++) {
+                const x = padding + (i - 1) * (chartWidth / 4);
+                ctx.fillText(i, x, height - padding + 20);
+                
+                // 网格线
+                ctx.strokeStyle = '#e0e0e0';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x, padding);
+                ctx.lineTo(x, height - padding);
+                ctx.stroke();
+            }
+            
+            // Y轴标签 (0-1)
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 5; i++) {
+                const y = height - padding - i * (chartHeight / 5);
+                const value = (i * 0.2).toFixed(1);
+                ctx.fillText(value, padding - 10, y);
+                
+                // 网格线
+                ctx.strokeStyle = '#e0e0e0';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(width - padding, y);
+                ctx.stroke();
+            }
+            
+            // 计算数据点
+            const points = [];
+            for (let i = 0; i < 5; i++) {
+                const x = padding + i * (chartWidth / 4);
+                const y = height - padding - gameState.numbers[i] * chartHeight;
+                points.push({x, y});
+            }
+            
+            // 绘制折线
+            ctx.strokeStyle = '#4a6fa5';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            
+            ctx.stroke();
+            
+            // 绘制数据点
+            ctx.fillStyle = '#2c5aa0';
+            for (let i = 0; i < points.length; i++) {
+                const point = points[i];
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 在点旁边显示Y值
+                ctx.fillStyle = '#4a6fa5';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(gameState.numbers[i].toFixed(3), point.x, point.y - 15);
+                ctx.fillStyle = '#2c5aa0';
+            }
+            
+            // 计算相关系数
+            const correlation = calculateCorrelation();
+            const formattedCorrelation = formatCorrelation(correlation);
+            
+            // 添加标题
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`X-Y 函数关系图 (|r| = ${formattedCorrelation})`, width / 2, 20);
+            
+            // 恢复样式
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 2;
+        }
+        
+        // 重随指定位置的数字
+        function rerollNumber(index) {
+            if (gameState.attempts <= 0 || gameState.submitted) return;
+            
+            // 减少尝试次数
+            gameState.attempts--;
+            
+            // 重新生成数字
+            gameState.numbers[index] = generateRandomNumber();
+            
+            // 重新计算分数
+            gameState.score = calculateScore();
+            
+            // 更新UI
+            updateNumbersDisplay();
+            updateAttemptsDisplay();
+            updateScoreDisplay();
+            
+            // 高亮显示刚刚点击的数字
+            if (gameState.displayMode !== 'chart') {
+                const numberBoxes = document.querySelectorAll('.number-box');
+                numberBoxes[index].classList.add('selected');
+                
+                // 短暂高亮后移除高亮
+                setTimeout(() => {
+                    numberBoxes[index].classList.remove('selected');
+                }, 300);
+            }
+        }
+        
+        // 更新尝试次数显示
+        function updateAttemptsDisplay() {
+            document.getElementById('attempts').textContent = gameState.attempts;
+        }
+        
+        // 计算相关系数 |r|
+        function calculateCorrelation() {
+            const x = [1, 2, 3, 4, 5];
+            const y = gameState.numbers;
+            
+            // 计算平均值
+            const xMean = x.reduce((a, b) => a + b, 0) / x.length;
+            const yMean = y.reduce((a, b) => a + b, 0) / y.length;
+            
+            // 计算分子和分母
+            let numerator = 0;
+            let xVariance = 0;
+            let yVariance = 0;
+            
+            for (let i = 0; i < x.length; i++) {
+                const xDiff = x[i] - xMean;
+                const yDiff = y[i] - yMean;
+                
+                numerator += xDiff * yDiff;
+                xVariance += xDiff * xDiff;
+                yVariance += yDiff * yDiff;
+            }
+            
+            // 计算相关系数
+            if (xVariance === 0 || yVariance === 0) return 0;
+            
+            const r = numerator / Math.sqrt(xVariance * yVariance);
+            return Math.abs(r);
+        }
+        
+        // 计算极差
+        function calculateRange() {
+            const y = gameState.numbers;
+            const max = Math.max(...y);
+            const min = Math.min(...y);
+            return max - min;
+        }
+        
+        // 计算得分
+        function calculateScore() {
+            const r = calculateCorrelation();
+            const range = calculateRange();
+            
+            // 防止log(0)或log(负数)的情况
+            const logArg = Math.max(1 - r, 1e-10);
+            
+            // 计算得分公式: -log10(1-|r|) + 1 - 极差
+            let score = -Math.log10(logArg) + 1 - range;
+            
+            // 保留两位小数（去尾）
+            return Math.floor(score * 100) / 100;
+        }
+        
+        // 更新分数显示
+        function updateScoreDisplay() {
+            document.getElementById('score-display').textContent = gameState.score.toFixed(2);
+        }
+        
+        // 更新切换按钮显示
+        function updateToggleButton() {
+            const button = document.getElementById('toggle-display');
+            button.textContent = gameState.displayMode === 'chart' ? '图' : gameState.displayMode;
+        }
+        
+        // 切换显示模式
+        function toggleDisplay() {
+            // 切换顺序: 3 → 6 → chart → 3
+            if (gameState.displayMode === 3) {
+                gameState.displayMode = 6;
+            } else if (gameState.displayMode === 6) {
+                gameState.displayMode = 'chart';
+            } else {
+                gameState.displayMode = 3;
+            }
+            
+            updateToggleButton();
+            updateNumbersDisplay();
+        }
+        
+        // 提交分数
+        function submitScore() {
+            if (gameState.submitted) return;
+            
+            gameState.submitted = true;
+            gameState.score = calculateScore();
+            
+            // 显示结果界面
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('result-screen').style.display = 'block';
+            
+            // 显示最终分数
+            document.getElementById('final-score').textContent = gameState.score.toFixed(2);
+            
+            // 生成分数图表
+            generateScoreChart();
+            
+            // 显示相关系数和极差信息
+            displayResultInfo();
+            
+            // 显示成绩等级
+            displayGrade();
+            
+            // 禁用提交按钮
+            document.getElementById('submit-btn').disabled = true;
+        }
+        
+        // 生成分数图表
+        function generateScoreChart() {
+            const chart = document.getElementById('score-chart');
+            chart.innerHTML = '';
+            
+            // 计算相关系数
+            const correlation = calculateCorrelation();
+            const range = calculateRange();
+            
+            // 图表数据：5个数字和相关系数
+            const data = [
+                { label: "1", value: gameState.numbers[0] },
+                { label: "2", value: gameState.numbers[1] },
+                { label: "3", value: gameState.numbers[2] },
+                { label: "4", value: gameState.numbers[3] },
+                { label: "5", value: gameState.numbers[4] },
+                { label: "|r|", value: correlation }
+            ];
+            
+            // 找到最大值用于缩放
+            const maxValue = Math.max(...data.map(d => d.value), 1);
+            
+            // 创建条形
+            data.forEach(item => {
+                const barHeight = (item.value / maxValue) * 250;
+                
+                const bar = document.createElement('div');
+                bar.className = 'chart-bar';
+                bar.style.height = `${barHeight}px`;
+                
+                const barValue = document.createElement('div');
+                barValue.className = 'bar-value';
+                
+                // 为|r|使用特殊格式化，其他数字使用3位小数
+                if (item.label === "|r|") {
+                    barValue.textContent = formatCorrelation(item.value);
+                } else {
+                    barValue.textContent = item.value.toFixed(3);
+                }
+                
+                const barLabel = document.createElement('div');
+                barLabel.className = 'bar-label';
+                barLabel.textContent = item.label;
+                
+                bar.appendChild(barValue);
+                bar.appendChild(barLabel);
+                chart.appendChild(bar);
+            });
+        }
+        
+        // 显示相关系数和极差信息
+        function displayResultInfo() {
+            const resultInfo = document.getElementById('result-info');
+            resultInfo.innerHTML = '';
+            
+            // 计算相关系数
+            const correlation = calculateCorrelation();
+            const range = calculateRange();
+            
+            // 创建相关系数信息
+            const correlationDiv = document.createElement('div');
+            correlationDiv.className = 'result-item';
+            correlationDiv.innerHTML = `
+                <h3>相关系数 |r|</h3>
+                <div class="result-item-value">${formatCorrelation(correlation)}</div>
+            `;
+            
+            // 创建极差信息（保留3位小数）
+            const rangeDiv = document.createElement('div');
+            rangeDiv.className = 'result-item';
+            rangeDiv.innerHTML = `
+                <h3>极差</h3>
+                <div class="result-item-value">${range.toFixed(3)}</div>
+            `;
+            
+            resultInfo.appendChild(correlationDiv);
+            resultInfo.appendChild(rangeDiv);
+        }
+        
+        // 显示成绩等级
+        function displayGrade() {
+            const gradeElement = document.getElementById('grade');
+            const score = gameState.score;
+            const gradeInfo = getGradeInfo(score);
+            
+            // 设置等级文本
+            gradeElement.textContent = gradeInfo.grade;
+            
+            // 移除所有可能的等级类
+            gradeElement.className = 'grade';
+            // 添加当前等级类
+            gradeElement.classList.add(gradeInfo.colorClass);
+            
+            // 设置等级描述
+            const gradeDesc = document.querySelector('.grade-desc');
+            gradeDesc.textContent = `成绩等级: ${gradeInfo.desc}`;
+            
+            // 设置结果界面背景色
+            const resultScreen = document.getElementById('result-screen');
+            // 移除所有可能的背景类
+            resultScreen.className = 'result-screen';
+            // 添加当前背景类
+            resultScreen.classList.add(gradeInfo.bgClass);
+        }
+        
+        // 分享结果（虚假功能）
+        function shareResult() {
+            alert("分享功能仅为演示，实际应用中可集成到社交平台");
+        }
+        
+        // 窗口大小变化时重绘图表
+        window.addEventListener('resize', function() {
+            if (gameState.displayMode === 'chart') {
+                drawLineChart();
+            }
+        });
+        
+        // 初始化事件监听
+        document.addEventListener('DOMContentLoaded', () => {
+            // 初始化游戏
+            initGame();
+            
+            // 切换显示按钮
+            document.getElementById('toggle-display').addEventListener('click', toggleDisplay);
+            
+            // 提交按钮
+            document.getElementById('submit-btn').addEventListener('click', submitScore);
+            
+            // 快速重开按钮
+            document.getElementById('quick-restart-btn').addEventListener('click', initGame);
+            
+            // 重新开始按钮
+            document.getElementById('restart-btn').addEventListener('click', initGame);
+            
+            // 分享按钮
+            document.getElementById('share-btn').addEventListener('click', shareResult);
+        });
+    </script>
+</body>
+</html>
