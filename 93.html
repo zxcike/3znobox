@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>关卡编辑器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 10px;
+            color: #e6e6e6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .editor-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .tools-panel {
+            background-color: rgba(15, 52, 96, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            width: 200px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .map-panel {
+            background-color: rgba(15, 52, 96, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            flex: 1;
+            min-width: 300px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 8px 10px;
+            background-color: rgba(10, 25, 49, 0.7);
+            border: 1px solid #4cc9f0;
+            border-radius: 4px;
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        textarea {
+            min-height: 100px;
+            font-family: monospace;
+            resize: vertical;
+        }
+        
+        .btn {
+            padding: 8px 12px;
+            background-color: #4cc9f0;
+            color: #0a1931;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        
+        .btn:hover {
+            background-color: #4361ee;
+            color: white;
+        }
+        
+        .btn.primary {
+            background-color: #f72585;
+            color: white;
+        }
+        
+        .btn.primary:hover {
+            background-color: #b5179e;
+        }
+        
+        .tool-list {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+        }
+        
+        .tool-btn {
+            padding: 4px;
+            background-color: rgba(10, 25, 49, 0.7);
+            border: 2px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            height: 50px;
+        }
+        
+        .tool-btn:hover {
+            background-color: rgba(76, 201, 240, 0.2);
+        }
+        
+        .tool-btn.active {
+            border-color: #4cc9f0;
+            background-color: rgba(76, 201, 240, 0.3);
+        }
+        
+        .tool-icon {
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+        
+        .tool-name {
+            font-size: 0.6rem;
+            text-align: center;
+        }
+        
+        .map-display-container {
+            overflow-x: auto;
+            overflow-y: visible;
+            margin-bottom: 15px;
+            max-width: 100%;
+            border-radius: 5px;
+            background-color: #0a1931;
+            border: 2px solid #0a1931;
+        }
+        
+        .map-grid {
+            display: grid;
+            grid-gap: 0;
+            width: max-content;
+        }
+        
+        .grid-cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        
+        .grid-cell:hover {
+            transform: scale(1.05);
+            z-index: 2;
+            position: relative;
+        }
+        
+        .wall {
+            background-color: #533483;
+            border: 1px solid #371B58;
+        }
+        
+        .floor {
+            background-color: #000000;
+        }
+        
+        .water {
+            background-color: #1e56a0;
+        }
+        
+        .player {
+            font-size: 20px;
+        }
+        
+        .fruit {
+            font-size: 18px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .knife {
+            font-size: 18px;
+        }
+        
+        .export-section {
+            margin-top: 15px;
+        }
+        
+        .export-code {
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 1px solid #4cc9f0;
+            border-radius: 5px;
+            padding: 12px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin-bottom: 10px;
+            height: 300px; /* 保持合理高度 */
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .message {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: #f72585;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            display: none;
+        }
+        
+        .message.show {
+            display: block;
+            animation: fadeInOut 2s ease;
+        }
+        
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(-20px); }
+            20% { opacity: 1; transform: translateY(0); }
+            80% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+        
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .info {
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        
+        .copy-btn {
+            background-color: #2ecc71;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .copy-btn:hover {
+            background-color: #27ae60;
+        }
+        
+        .copy-btn:active {
+            transform: translateY(1px);
+        }
+        
+        .copy-btn:disabled {
+            background-color: #7f8c8d;
+            cursor: not-allowed;
+        }
+        
+        .mobile-copy-area {
+            display: none;
+        }
+        
+        @media (max-width: 900px) {
+            .editor-container {
+                flex-direction: column;
+            }
+            
+            .tools-panel, .map-panel {
+                width: 100%;
+            }
+            
+            .grid-cell {
+                width: 35px;
+                height: 35px;
+            }
+            
+            .fruit, .player, .knife {
+                font-size: 16px;
+            }
+            
+            .fruit {
+                width: 28px;
+                height: 28px;
+            }
+            
+            .export-code {
+                height: 200px;
+            }
+            
+            .mobile-copy-area {
+                display: block;
+                margin-top: 10px;
+            }
+            
+            .mobile-copy-text {
+                background-color: rgba(0, 0, 0, 0.5);
+                border: 1px solid #4cc9f0;
+                border-radius: 5px;
+                padding: 12px;
+                font-family: monospace;
+                white-space: pre-wrap;
+                word-break: break-all;
+                max-height: 300px;
+                overflow-y: auto;
+                font-size: 0.85rem;
+                line-height: 1.3;
+                margin-bottom: 10px;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .grid-cell {
+                width: 30px;
+                height: 30px;
+            }
+            
+            .fruit, .player, .knife {
+                font-size: 14px;
+            }
+            
+            .fruit {
+                width: 24px;
+                height: 24px;
+            }
+            
+            .tool-list {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .export-code {
+                height: 150px;
+            }
+            
+            .mobile-copy-text {
+                max-height: 250px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="editor-container">
+            <div class="tools-panel">
+                <div class="input-group">
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="createMethod" value="blank" checked> 空白地图
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="createMethod" value="import"> 导入地图
+                        </label>
+                    </div>
+                    
+                    <div id="blankMapOptions" class="input-group">
+                        <label>宽度:</label>
+                        <input type="number" id="mapWidth" min="5" max="50" value="10">
+                        
+                        <label>高度:</label>
+                        <input type="number" id="mapHeight" min="5" max="50" value="8">
+                        
+                        <button class="btn" id="createBlankBtn">创建</button>
+                    </div>
+                    
+                    <div id="importMapOptions" class="input-group" style="display: none;">
+                        <label>粘贴地图:</label>
+                        <textarea id="importText" placeholder='例如: ["##########", "#@       #", "# a b s  #"]'></textarea>
+                        <button class="btn" id="importBtn">导入</button>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <div class="tool-list" id="toolList"></div>
+                </div>
+                
+                <div class="info">尺寸: <span id="mapSize">0×0</span></div>
+            </div>
+            
+            <div class="map-panel">
+                <div class="map-display-container">
+                    <div id="mapGrid" class="map-grid"></div>
+                </div>
+                
+                <div class="export-section">
+                    <button class="btn primary" id="exportBtn">导出地图</button>
+                    <div id="exportCode" class="export-code" style="display: none;"></div>
+                    
+                    <div class="mobile-copy-area" id="mobileCopyArea" style="display: none;">
+                        <button class="copy-btn" id="copyBtn">复制代码</button>
+                        <div id="mobileCopyText" class="mobile-copy-text"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        const elements = {
+            '#': {name: '墙', emoji: '🧱', class: 'wall'},
+            ' ': {name: '地板', emoji: ' ', class: 'floor'},
+            '~': {name: '水面', emoji: '💧', class: 'water'},
+            '@': {name: '玩家', emoji: '😀', class: 'player'},
+            'a': {name: '苹果', emoji: '🍎', class: 'fruit'},
+            'o': {name: '橙子', emoji: '🍊', class: 'fruit'},
+            'c': {name: '椰子', emoji: '🥥', class: 'fruit'},
+            'b': {name: '香蕉', emoji: '🍌', class: 'fruit'},
+            'm': {name: '芒果', emoji: '🥭', class: 'fruit'},
+            'p': {name: '菠萝', emoji: '🍍', class: 'fruit'},
+            's': {name: '草莓', emoji: '🍓', class: 'fruit'},
+            'e': {name: '桃子', emoji: '🍑', class: 'fruit'},
+            'w': {name: '西瓜', emoji: '🍉', class: 'fruit'},
+            'g': {name: '葡萄', emoji: '🍇', class: 'fruit'},
+            'r': {name: '樱桃', emoji: '🍒', class: 'fruit'},
+            'k': {name: '刀', emoji: '🔪', class: 'knife'}
+        };
+
+        const editorState = {
+            map: [],
+            width: 0,
+            height: 0,
+            selectedTool: ' ',
+            tools: [
+                {id: ' ', name: '地板', emoji: ' '},
+                {id: '#', name: '墙', emoji: '🧱'},
+                {id: '~', name: '水面', emoji: '💧'},
+                {id: '@', name: '玩家', emoji: '😀'},
+                {id: 'a', name: '苹果', emoji: '🍎'},
+                {id: 'o', name: '橙子', emoji: '🍊'},
+                {id: 'c', name: '椰子', emoji: '🥥'},
+                {id: 'b', name: '香蕉', emoji: '🍌'},
+                {id: 'm', name: '芒果', emoji: '🥭'},
+                {id: 'p', name: '菠萝', emoji: '🍍'},
+                {id: 's', name: '草莓', emoji: '🍓'},
+                {id: 'e', name: '桃子', emoji: '🍑'},
+                {id: 'w', name: '西瓜', emoji: '🍉'},
+                {id: 'g', name: '葡萄', emoji: '🍇'},
+                {id: 'r', name: '樱桃', emoji: '🍒'},
+                {id: 'k', name: '刀', emoji: '🔪'}
+            ]
+        };
+
+        const mapGrid = document.getElementById('mapGrid');
+        const toolList = document.getElementById('toolList');
+        const createBlankBtn = document.getElementById('createBlankBtn');
+        const importBtn = document.getElementById('importBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const exportCode = document.getElementById('exportCode');
+        const message = document.getElementById('message');
+        const mapSize = document.getElementById('mapSize');
+        const createMethodRadios = document.querySelectorAll('input[name="createMethod"]');
+        const blankMapOptions = document.getElementById('blankMapOptions');
+        const importMapOptions = document.getElementById('importMapOptions');
+        const copyBtn = document.getElementById('copyBtn');
+        const mobileCopyArea = document.getElementById('mobileCopyArea');
+        const mobileCopyText = document.getElementById('mobileCopyText');
+
+        function init() {
+            initToolList();
+            initCreateMethodToggle();
+            createBlankMap(10, 8);
+            initEventListeners();
+        }
+
+        function initToolList() {
+            toolList.innerHTML = '';
+            editorState.tools.forEach(tool => {
+                const toolBtn = document.createElement('div');
+                toolBtn.className = 'tool-btn';
+                if (tool.id === editorState.selectedTool) {
+                    toolBtn.classList.add('active');
+                }
+                toolBtn.dataset.toolId = tool.id;
+                
+                const toolIcon = document.createElement('div');
+                toolIcon.className = 'tool-icon';
+                toolIcon.textContent = tool.emoji;
+                
+                const toolName = document.createElement('div');
+                toolName.className = 'tool-name';
+                toolName.textContent = tool.name;
+                
+                toolBtn.appendChild(toolIcon);
+                toolBtn.appendChild(toolName);
+                toolList.appendChild(toolBtn);
+                
+                toolBtn.addEventListener('click', () => {
+                    selectTool(tool.id);
+                });
+            });
+        }
+
+        function selectTool(toolId) {
+            editorState.selectedTool = toolId;
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                if (btn.dataset.toolId === toolId) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        function initCreateMethodToggle() {
+            createMethodRadios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    if (radio.value === 'blank') {
+                        blankMapOptions.style.display = 'block';
+                        importMapOptions.style.display = 'none';
+                    } else {
+                        blankMapOptions.style.display = 'none';
+                        importMapOptions.style.display = 'block';
+                    }
+                });
+            });
+        }
+
+        function createBlankMap(width, height) {
+            editorState.width = Math.max(5, Math.min(50, width));
+            editorState.height = Math.max(5, Math.min(50, height));
+            
+            editorState.map = [];
+            for (let y = 0; y < editorState.height; y++) {
+                editorState.map[y] = [];
+                for (let x = 0; x < editorState.width; x++) {
+                    if (x === 0 || x === editorState.width - 1 || y === 0 || y === editorState.height - 1) {
+                        editorState.map[y][x] = '#';
+                    } else {
+                        editorState.map[y][x] = ' ';
+                    }
+                }
+            }
+            
+            const centerX = Math.floor(editorState.width / 2);
+            const centerY = Math.floor(editorState.height / 2);
+            editorState.map[centerY][centerX] = '@';
+            
+            renderMap();
+            updateMapInfo();
+        }
+
+        function importMapFromText(text) {
+            try {
+                let mapArray;
+                if (text.trim().startsWith('[') && text.trim().endsWith(']')) {
+                    mapArray = JSON.parse(text);
+                } else {
+                    mapArray = text.trim().split('\n').map(line => line.trim());
+                }
+                
+                if (!Array.isArray(mapArray) || mapArray.length === 0) {
+                    throw new Error('无效格式');
+                }
+                
+                const firstRowLength = mapArray[0].length;
+                for (let i = 1; i < mapArray.length; i++) {
+                    if (mapArray[i].length !== firstRowLength) {
+                        throw new Error('行长度不一致');
+                    }
+                }
+                
+                for (let y = 0; y < mapArray.length; y++) {
+                    for (let x = 0; x < mapArray[y].length; x++) {
+                        const char = mapArray[y][x];
+                        if (char !== ' ' && !elements[char]) {
+                            throw new Error(`无效字符: "${char}"`);
+                        }
+                    }
+                }
+                
+                editorState.height = mapArray.length;
+                editorState.width = firstRowLength;
+                editorState.map = mapArray.map(row => row.split(''));
+                
+                renderMap();
+                updateMapInfo();
+                
+                showMessage('导入成功');
+                return true;
+            } catch (error) {
+                showMessage('导入失败: ' + error.message);
+                return false;
+            }
+        }
+
+        function renderMap() {
+            mapGrid.innerHTML = '';
+            
+            mapGrid.style.gridTemplateColumns = `repeat(${editorState.width}, 1fr)`;
+            mapGrid.style.gridTemplateRows = `repeat(${editorState.height}, 1fr)`;
+            
+            for (let y = 0; y < editorState.height; y++) {
+                for (let x = 0; x < editorState.width; x++) {
+                    const char = editorState.map[y][x];
+                    const element = elements[char] || elements[' '];
+                    
+                    const cell = document.createElement('div');
+                    cell.className = `grid-cell ${element.class}`;
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    
+                    if (element.emoji && element.emoji.trim() !== '') {
+                        cell.textContent = element.emoji;
+                    }
+                    
+                    cell.addEventListener('click', () => {
+                        placeElement(x, y);
+                    });
+                    
+                    mapGrid.appendChild(cell);
+                }
+            }
+        }
+
+        function placeElement(x, y) {
+            const toolId = editorState.selectedTool;
+            
+            if (toolId === '@') {
+                for (let i = 0; i < editorState.height; i++) {
+                    for (let j = 0; j < editorState.width; j++) {
+                        if (editorState.map[i][j] === '@') {
+                            editorState.map[i][j] = ' ';
+                        }
+                    }
+                }
+            }
+            
+            editorState.map[y][x] = toolId;
+            
+            renderMap();
+            updateMapInfo();
+        }
+
+        function updateMapInfo() {
+            mapSize.textContent = `${editorState.width}×${editorState.height}`;
+        }
+
+        function exportMap() {
+            const mapStrings = editorState.map.map(row => row.join(''));
+            const code = `[
+  "${mapStrings.join('",\n  "')}"
+]`;
+            
+            // 更新桌面版输出框
+            exportCode.textContent = code;
+            exportCode.style.display = 'block';
+            
+            // 更新移动版输出框
+            mobileCopyText.textContent = code;
+            mobileCopyArea.style.display = 'block';
+            
+            // 尝试自动选择桌面版文本
+            try {
+                const range = document.createRange();
+                range.selectNodeContents(exportCode);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+            } catch (e) {
+                // 忽略选择错误
+            }
+            
+            showMessage('地图代码已生成');
+        }
+
+        function copyToClipboard() {
+            const text = mobileCopyText.textContent;
+            
+            if (!text.trim()) {
+                showMessage('没有内容可复制');
+                return;
+            }
+            
+            // 创建临时textarea元素
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            
+            // 选择并复制文本
+            textarea.select();
+            textarea.setSelectionRange(0, 99999); // 对于移动设备
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showMessage('代码已复制到剪贴板');
+                    // 改变按钮状态
+                    copyBtn.textContent = '已复制';
+                    copyBtn.disabled = true;
+                    
+                    setTimeout(() => {
+                        copyBtn.textContent = '复制代码';
+                        copyBtn.disabled = false;
+                    }, 2000);
+                } else {
+                    showMessage('复制失败，请手动选择文本');
+                }
+            } catch (err) {
+                showMessage('复制失败: ' + err);
+            }
+            
+            // 移除临时元素
+            document.body.removeChild(textarea);
+        }
+
+        function showMessage(text) {
+            message.textContent = text;
+            message.classList.add('show');
+            
+            setTimeout(() => {
+                message.classList.remove('show');
+            }, 2000);
+        }
+
+        function initEventListeners() {
+            createBlankBtn.addEventListener('click', () => {
+                const width = parseInt(document.getElementById('mapWidth').value) || 10;
+                const height = parseInt(document.getElementById('mapHeight').value) || 8;
+                createBlankMap(width, height);
+            });
+            
+            importBtn.addEventListener('click', () => {
+                const importText = document.getElementById('importText').value;
+                if (importText.trim()) {
+                    importMapFromText(importText);
+                } else {
+                    showMessage('请输入地图代码');
+                }
+            });
+            
+            exportBtn.addEventListener('click', exportMap);
+            
+            copyBtn.addEventListener('click', copyToClipboard);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
