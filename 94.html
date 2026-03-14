@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>水果推推乐</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            color: #e6e6e6;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 10px;
+            width: 100%;
+            max-width: 600px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+            color: #4cc9f0;
+            text-shadow: 0 0 10px rgba(76, 201, 240, 0.5);
+        }
+        
+        .game-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .game-board {
+            background-color: #0f3460;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .game-info {
+            background-color: rgba(15, 52, 96, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            width: 250px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .game-grid {
+            display: grid;
+            grid-gap: 0;
+            background-color: #0a1931;
+            border-radius: 3px;
+            overflow: hidden;
+            border: 2px solid #0a1931;
+        }
+        
+        .cell {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .wall {
+            background-color: #533483;
+            border: 1px solid #371B58;
+            font-size: 1.5em;
+        }
+        
+        .floor {
+            background-color: #000000;
+        }
+        
+        .water {
+            background-color: #1e56a0;
+        }
+        
+        .player {
+            font-size: 20px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        
+        .fruit {
+            font-size: 18px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .knife {
+            font-size: 18px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .control-row {
+            display: flex;
+            gap: 8px;
+            margin: 5px 0;
+        }
+        
+        .control-btn {
+            padding: 12px 18px;
+            font-size: 1.4rem;
+            background-color: #4cc9f0;
+            color: #0a1931;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            min-width: 60px;
+        }
+        
+        .control-btn:hover {
+            background-color: #4361ee;
+            color: white;
+        }
+        
+        .control-btn:active {
+            transform: translateY(2px);
+        }
+        
+        .restart-btn {
+            background-color: #f72585;
+            color: white;
+            margin-bottom: 10px;
+            padding: 10px 20px;
+            font-size: 1.1rem;
+            min-width: 120px;
+        }
+        
+        .restart-btn:hover {
+            background-color: #b5179e;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            background-color: rgba(10, 25, 49, 0.7);
+            padding: 8px;
+            border-radius: 5px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #4cc9f0;
+        }
+        
+        .level-selector {
+            margin-top: 15px;
+        }
+        
+        .level-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 8px;
+        }
+        
+        .level-btn {
+            padding: 5px 8px;
+            background-color: #7209b7;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        
+        .level-btn.active {
+            background-color: #560bad;
+            box-shadow: 0 0 0 1px white, 0 0 0 3px #560bad;
+        }
+        
+        .message {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #f72585;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            display: none;
+        }
+        
+        .message.show {
+            display: block;
+            animation: fadeInOut 2s ease;
+        }
+        
+        @keyframes fadeInOut {
+            0% { opacity: 0; top: 0; }
+            20% { opacity: 1; top: 10px; }
+            80% { opacity: 1; top: 10px; }
+            100% { opacity: 0; top: 0; }
+        }
+        
+        .victory {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .victory.show {
+            display: flex;
+        }
+        
+        .victory-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+            max-width: 300px;
+            width: 90%;
+            border: 2px solid #4cc9f0;
+        }
+        
+        .victory h2 {
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+        
+        @media (max-width: 600px) {
+            .game-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .game-info {
+                width: 100%;
+                max-width: 400px;
+            }
+            
+            .cell {
+                width: 28px;
+                height: 28px;
+            }
+            
+            .fruit {
+                width: 24px;
+                height: 24px;
+                font-size: 16px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .control-btn {
+                padding: 10px 15px;
+                font-size: 1.2rem;
+                min-width: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>水果推推乐</h1>
+    </header>
+    
+    <div class="game-container">
+        <div class="game-board">
+            <div class="controls">
+                <button class="control-btn restart-btn" id="restartBtn">重新开始</button>
+            </div>
+            <div id="gameGrid" class="game-grid"></div>
+            <div class="controls">
+                <div class="control-row">
+                    <button class="control-btn" id="upBtn">↑</button>
+                </div>
+                <div class="control-row">
+                    <button class="control-btn" id="leftBtn">←</button>
+                    <button class="control-btn" id="downBtn">↓</button>
+                    <button class="control-btn" id="rightBtn">→</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="game-info">
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">剩余水果</div>
+                    <div class="stat-value" id="fruitCount">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">移动步数</div>
+                    <div class="stat-value" id="moveCount">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">当前关卡</div>
+                    <div class="stat-value" id="currentLevel">1</div>
+                </div>
+            </div>
+            
+            <div class="level-selector">
+                <div class="level-buttons" id="levelButtons"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="message" id="message"></div>
+    
+    <div class="victory" id="victoryScreen">
+        <div class="victory-content">
+            <h2>恭喜通关！🎉🎉</h2>
+            <p>移动步数: <span id="finalMoves">0</span></p>
+            <button class="control-btn restart-btn" id="nextLevelBtn">下一关</button>
+        </div>
+    </div>
+
+    <script>
+        // 游戏状态
+        const gameState = {
+            playerX: 0,
+            playerY: 0,
+            grid: [],
+            moves: 0,
+            fruitsLeft: 0,
+            currentLevel: 0,
+            levels: [],
+            waterPositions: [] // 新增：存储水的位置
+        };
+
+        // 元素映射 - 使用表情符号
+        const elements = {
+            '#': {type: 'wall', name: '墙', emoji: '🧱'},
+            ' ': {type: 'floor', name: '地面', emoji: ''},
+            '~': {type: 'water', name: '水面', emoji: '💧'},
+            '@': {type: 'player', name: '玩家', emoji: '😋'},
+            'a': {type: 'fruit', name: '苹果', emoji: '🍎'},
+            'o': {type: 'fruit', name: '橙子', emoji: '🍊'},
+            'c': {type: 'fruit', name: '椰子', emoji: '🥥'},
+            'b': {type: 'fruit', name: '香蕉', emoji: '🍌'},
+            'm': {type: 'fruit', name: '芒果', emoji: '🥭'},
+            'p': {type: 'fruit', name: '菠萝', emoji: '🍍'},
+            's': {type: 'fruit', name: '草莓', emoji: '🍓'},
+            'e': {type: 'fruit', name: '桃子', emoji: '🍑'},
+            'w': {type: 'fruit', name: '西瓜', emoji: '🍉'},
+            'g': {type: 'fruit', name: '葡萄', emoji: '🍇'},
+            'r': {type: 'fruit', name: '樱桃', emoji: '🍒'},
+            'k': {type: 'knife', name: '刀', emoji: '🔪'}
+        };
+
+        // 可以进入水面的水果
+        const waterFruits = ['a', 'o', 'c', 'p', 'w'];
+
+        // 生成完整的合成规则表
+        function generateFruitRules() {
+            const rules = {};
+            
+            // 定义行和列
+            const rows = [
+                ['a', 'o', 'c'],  // 苹果, 橙子, 椰子
+                ['b', 'm', 'p'],  // 香蕉, 芒果, 菠萝
+                ['s', 'e', 'w']   // 草莓, 桃子, 西瓜
+            ];
+            
+            const cols = [
+                ['a', 'b', 's'],  // 苹果, 香蕉, 草莓
+                ['o', 'm', 'e'],  // 橙子, 芒果, 桃子
+                ['c', 'p', 'w']   // 椰子, 菠萝, 西瓜
+            ];
+            
+            // 生成行规则
+            rows.forEach(row => {
+                const [f1, f2, f3] = row;
+                
+                // 第一个+第二个=第三个
+                rules[f1 + f2] = f3;
+                rules[f2 + f1] = f3;
+                
+                // 第一个+第三个=第二个
+                rules[f1 + f3] = f2;
+                rules[f3 + f1] = f2;
+                
+                // 第二个+第三个=葡萄(g)
+                rules[f2 + f3] = 'g';
+                rules[f3 + f2] = 'g';
+            });
+            
+            // 生成列规则
+            cols.forEach(col => {
+                const [f1, f2, f3] = col;
+                
+                // 第一个+第二个=第三个
+                rules[f1 + f2] = f3;
+                rules[f2 + f1] = f3;
+                
+                // 第一个+第三个=第二个
+                rules[f1 + f3] = f2;
+                rules[f3 + f1] = f2;
+                
+                // 第二个+第三个=樱桃(r)
+                rules[f2 + f3] = 'r';
+                rules[f3 + f2] = 'r';
+            });
+            
+            // 相同水果消除
+            const allFruits = ['a', 'o', 'c', 'b', 'm', 'p', 's', 'e', 'w', 'g', 'r'];
+            allFruits.forEach(fruit => {
+                rules[fruit + fruit] = null; // 相同水果消除
+            });
+            
+            // 刀可以和任何水果结合，两者都消除
+            // 添加所有刀+水果和水果+刀的规则
+            allFruits.forEach(fruit => {
+                rules['k' + fruit] = null;
+                rules[fruit + 'k'] = null;
+            });
+            
+            return rules;
+        }
+
+        // 生成合成规则表
+        const fruitRules = generateFruitRules();
+
+        // 关卡定义 - 测试所有合成规则的地图
+        const levelData = [
+            {
+                name: "测试关卡",
+                map: [
+                    "###########",
+                    "#         #",
+                    "# a o c g #",
+                    "#         #",
+                    "# b m p g #",
+                    "#         #",
+                    "# s e w g #",
+                    "#         #",
+                    "# r r r @ #",
+                    "#         #",
+                    "# ~ ~ ~   #",
+                    "#         #",
+                    "# k k k   #",
+                    "###########"
+                ]
+            },
+            {
+                name: "关卡1",
+                map: [
+                    "##########",
+                    "#@       #",
+                    "# a b s  #",
+                    "# o m e  #",
+                    "# c p w  #",
+                    "# ~~~~~  #",
+                    "# g r k  #",
+                    "##########"
+                ]
+            },
+            {
+                name: "关卡2",
+                map: [
+                    "#########",
+                    "# p   k #",
+                    "# #m#o# #",
+                    "#aa   aa#",
+                    "# #b@m# #",
+                    "#~a~s~a~#",
+                    "# #c#c# #",
+                    "# g   r #",
+                    "#########"
+                ]
+            }
+        ];
+
+        // DOM元素
+        const gameGrid = document.getElementById('gameGrid');
+        const fruitCount = document.getElementById('fruitCount');
+        const moveCount = document.getElementById('moveCount');
+        const currentLevel = document.getElementById('currentLevel');
+        const message = document.getElementById('message');
+        const victoryScreen = document.getElementById('victoryScreen');
+        const finalMoves = document.getElementById('finalMoves');
+        const levelButtons = document.getElementById('levelButtons');
+
+        // 初始化游戏
+        function initGame() {
+            // 加载关卡
+            gameState.levels = levelData;
+            gameState.currentLevel = 0;
+            
+            // 创建关卡选择按钮
+            createLevelButtons();
+            
+            // 加载第一个关卡
+            loadLevel(gameState.currentLevel);
+            
+            // 初始化事件监听
+            initEventListeners();
+            
+            // 更新UI
+            updateUI();
+        }
+
+        // 创建关卡选择按钮
+        function createLevelButtons() {
+            levelButtons.innerHTML = '';
+            gameState.levels.forEach((level, index) => {
+                const button = document.createElement('button');
+                button.className = 'level-btn';
+                button.textContent = level.name;
+                button.addEventListener('click', () => loadLevel(index));
+                levelButtons.appendChild(button);
+            });
+        }
+
+        // 加载关卡
+        function loadLevel(levelIndex) {
+            gameState.currentLevel = levelIndex;
+            const level = gameState.levels[levelIndex];
+            
+            // 重置游戏状态
+            gameState.grid = [];
+            gameState.moves = 0;
+            gameState.fruitsLeft = 0;
+            gameState.waterPositions = []; // 重置水的位置
+            
+            // 解析地图
+            for (let y = 0; y < level.map.length; y++) {
+                const row = level.map[y];
+                gameState.grid[y] = [];
+                
+                for (let x = 0; x < row.length; x++) {
+                    const char = row[x];
+                    const element = elements[char];
+                    
+                    if (char === '@') {
+                        gameState.playerX = x;
+                        gameState.playerY = y;
+                        gameState.grid[y][x] = {type: 'floor', char: ' ', emoji: '', originalType: 'floor'};
+                    } else {
+                        gameState.grid[y][x] = {
+                            type: element.type, 
+                            char: char,
+                            emoji: element.emoji,
+                            originalType: element.type // 记录原始类型
+                        };
+                        
+                        // 记录水的位置
+                        if (char === '~') {
+                            gameState.waterPositions.push({x, y});
+                        }
+                        
+                        // 只计算水果，不计算刀
+                        if (element.type === 'fruit') {
+                            gameState.fruitsLeft++;
+                        }
+                    }
+                }
+            }
+            
+            // 更新关卡按钮状态
+            const buttons = document.querySelectorAll('.level-btn');
+            buttons.forEach((btn, index) => {
+                if (index === levelIndex) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // 渲染游戏网格
+            renderGameGrid();
+            updateUI();
+        }
+
+        // 渲染游戏网格
+        function renderGameGrid() {
+            gameGrid.innerHTML = '';
+            
+            const rows = gameState.grid.length;
+            const cols = gameState.grid[0].length;
+            
+            // 设置网格样式
+            gameGrid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            gameGrid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+            
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    
+                    const cellData = gameState.grid[y][x];
+                    
+                    // 添加基础单元格类型
+                    cell.classList.add(cellData.type);
+                    
+                    // 如果是玩家位置，添加玩家
+                    if (x === gameState.playerX && y === gameState.playerY) {
+                        cell.textContent = '😋';
+                        cell.classList.add('player');
+                    } else if (cellData.emoji) {
+                        // 如果有元素，添加到单元格
+                        cell.textContent = cellData.emoji;
+                        
+                        if (cellData.type === 'fruit') {
+                            cell.classList.add('fruit');
+                        } else if (cellData.type === 'knife') {
+                            cell.classList.add('knife');
+                        }
+                    }
+                    
+                    gameGrid.appendChild(cell);
+                }
+            }
+        }
+
+        // 恢复水面
+        function restoreWater() {
+            gameState.waterPositions.forEach(pos => {
+                const cell = gameState.grid[pos.y][pos.x];
+                // 如果这个位置没有水果或刀，就恢复为水面
+                if (cell.char === ' ' && cell.type !== 'water') {
+                    cell.type = 'water';
+                    cell.char = '~';
+                    cell.emoji = elements['~'].emoji;
+                }
+            });
+        }
+
+        // 移动玩家
+        function movePlayer(dx, dy) {
+            const newX = gameState.playerX + dx;
+            const newY = gameState.playerY + dy;
+            
+            // 检查边界
+            if (newX < 0 || newY < 0 || newY >= gameState.grid.length || newX >= gameState.grid[0].length) {
+                return;
+            }
+            
+            const targetCell = gameState.grid[newY][newX];
+            
+            // 如果是墙，不能移动
+            if (targetCell.type === 'wall') {
+                return;
+            }
+            
+            // 如果目标单元格是空的，直接移动
+            if (!targetCell.char || targetCell.char === ' ' || targetCell.char === '~') {
+                gameState.playerX = newX;
+                gameState.playerY = newY;
+                gameState.moves++;
+                updateUI();
+                renderGameGrid();
+                return;
+            }
+            
+            // 如果目标单元格有水果或刀，尝试推动
+            const pushX = newX + dx;
+            const pushY = newY + dy;
+            
+            // 检查推动目标是否在边界内
+            if (pushX < 0 || pushY < 0 || pushY >= gameState.grid.length || pushX >= gameState.grid[0].length) {
+                return;
+            }
+            
+            const pushCell = gameState.grid[pushY][pushX];
+            
+            // 如果推动目标是墙，不能推动
+            if (pushCell.type === 'wall') {
+                return;
+            }
+            
+            // 检查是否可以进入水面
+            if (pushCell.type === 'water') {
+                const fruitChar = targetCell.char;
+                if (!waterFruits.includes(fruitChar) && fruitChar !== 'k') {
+                    showMessage(`${elements[fruitChar].name}不能进入水面！`);
+                    return;
+                }
+            }
+            
+            // 如果推动目标是空的，移动水果
+            if (!pushCell.char || pushCell.char === ' ' || pushCell.char === '~') {
+                // 移动水果到新位置
+                pushCell.char = targetCell.char;
+                pushCell.type = targetCell.type;
+                pushCell.emoji = targetCell.emoji;
+                
+                // 清空原位置
+                targetCell.char = ' ';
+                targetCell.type = 'floor';
+                targetCell.emoji = '';
+                
+                // 移动玩家
+                gameState.playerX = newX;
+                gameState.playerY = newY;
+                gameState.moves++;
+                
+                // 恢复水面
+                restoreWater();
+                
+                updateUI();
+                renderGameGrid();
+                return;
+            }
+            
+            // 如果推动目标是另一个水果或刀，检查是否可以合并
+            const movedFruitChar = targetCell.char;
+            const targetFruitChar = pushCell.char;
+            const combo1 = movedFruitChar + targetFruitChar;
+            const combo2 = targetFruitChar + movedFruitChar;
+            
+            // 检查这两个水果是否可以合并（是否在合成表中）
+            if (!fruitRules.hasOwnProperty(combo1) && !fruitRules.hasOwnProperty(combo2)) {
+                // 不在合成表中，不能合并，阻止推动
+                return;
+            }
+            
+            // 检查是否可以进入水面
+            if (pushCell.type === 'water') {
+                const fruitChar = targetCell.char;
+                if (!waterFruits.includes(fruitChar) && fruitChar !== 'k') {
+                    showMessage(`${elements[fruitChar].name}不能进入水面！`);
+                    return;
+                }
+            }
+            
+            // 清空被推动的水果位置
+            targetCell.char = ' ';
+            targetCell.type = 'floor';
+            targetCell.emoji = '';
+            
+            // 移动玩家
+            gameState.playerX = newX;
+            gameState.playerY = newY;
+            gameState.moves++;
+            
+            // 检查重合后的合成
+            checkMerge(pushX, pushY, movedFruitChar, targetFruitChar);
+            
+            // 恢复水面
+            restoreWater();
+            
+            updateUI();
+            renderGameGrid();
+            
+            // 检查是否胜利
+            if (gameState.fruitsLeft === 0) {
+                setTimeout(() => {
+                    victoryScreen.classList.add('show');
+                    finalMoves.textContent = gameState.moves;
+                }, 500);
+            }
+        }
+
+        // 检查两个水果重合时的合成
+        function checkMerge(x, y, fruit1, fruit2) {
+            const combo1 = fruit1 + fruit2;
+            const combo2 = fruit2 + fruit1;
+            
+            // 检查是否是相同水果
+            if (fruit1 === fruit2 && fruit1 !== 'k') {
+                // 相同水果，消除
+                showMessage(`${elements[fruit1].name}消除了！`);
+                gameState.grid[y][x].char = ' ';
+                gameState.grid[y][x].type = 'floor';
+                gameState.grid[y][x].emoji = '';
+                gameState.fruitsLeft -= 2;
+                return;
+            }
+            
+            // 检查水果组合规则
+            let newFruit = null;
+            if (fruitRules[combo1] !== undefined) {
+                newFruit = fruitRules[combo1];
+            } else if (fruitRules[combo2] !== undefined) {
+                newFruit = fruitRules[combo2];
+            }
+            
+            if (newFruit !== undefined) {
+                if (newFruit === null) {
+                    // 消除（相同水果或刀+水果）
+                    if (fruit1 === 'k' || fruit2 === 'k') {
+                        showMessage(`刀和水果一起消除了！`);
+                        // 刀+水果，两者都消除
+                        gameState.grid[y][x].char = ' ';
+                        gameState.grid[y][x].type = 'floor';
+                        gameState.grid[y][x].emoji = '';
+                        // 如果其中一个是刀，只减少一个水果（刀不算水果）
+                        if (fruit1 === 'k' && fruit2 !== 'k') {
+                            gameState.fruitsLeft -= 1; // 只减少水果
+                        } else if (fruit2 === 'k' && fruit1 !== 'k') {
+                            gameState.fruitsLeft -= 1; // 只减少水果
+                        } else {
+                            // 两个都是刀的情况理论上不会发生
+                            gameState.fruitsLeft -= 2;
+                        }
+                    } else {
+                        // 相同水果
+                        showMessage(`${elements[fruit1].name}消除了！`);
+                        gameState.grid[y][x].char = ' ';
+                        gameState.grid[y][x].type = 'floor';
+                        gameState.grid[y][x].emoji = '';
+                        gameState.fruitsLeft -= 2;
+                    }
+                } else {
+                    // 合成新水果
+                    gameState.grid[y][x].char = newFruit;
+                    gameState.grid[y][x].type = 'fruit';
+                    gameState.grid[y][x].emoji = elements[newFruit].emoji;
+                    
+                    gameState.fruitsLeft--; // 减少一个水果
+                    showMessage(`${elements[fruit1].name}+${elements[fruit2].name}=${elements[newFruit].name}`);
+                }
+            }
+        }
+
+        // 显示消息
+        function showMessage(text) {
+            message.textContent = text;
+            message.classList.add('show');
+            
+            setTimeout(() => {
+                message.classList.remove('show');
+            }, 2000);
+        }
+
+        // 更新UI
+        function updateUI() {
+            fruitCount.textContent = gameState.fruitsLeft;
+            moveCount.textContent = gameState.moves;
+            currentLevel.textContent = gameState.currentLevel + 1;
+        }
+
+        // 初始化事件监听
+        function initEventListeners() {
+            // 方向按钮
+            document.getElementById('upBtn').addEventListener('click', () => movePlayer(0, -1));
+            document.getElementById('downBtn').addEventListener('click', () => movePlayer(0, 1));
+            document.getElementById('leftBtn').addEventListener('click', () => movePlayer(-1, 0));
+            document.getElementById('rightBtn').addEventListener('click', () => movePlayer(1, 0));
+            
+            // 重新开始按钮
+            document.getElementById('restartBtn').addEventListener('click', () => loadLevel(gameState.currentLevel));
+            
+            // 下一关按钮
+            document.getElementById('nextLevelBtn').addEventListener('click', () => {
+                victoryScreen.classList.remove('show');
+                if (gameState.currentLevel < gameState.levels.length - 1) {
+                    loadLevel(gameState.currentLevel + 1);
+                } else {
+                    loadLevel(0);
+                }
+            });
+            
+            // 键盘控制
+            document.addEventListener('keydown', (e) => {
+                switch(e.key) {
+                    case 'ArrowUp':
+                    case 'w':
+                    case 'W':
+                        movePlayer(0, -1);
+                        break;
+                    case 'ArrowDown':
+                    case 's':
+                    case 'S':
+                        movePlayer(0, 1);
+                        break;
+                    case 'ArrowLeft':
+                    case 'a':
+                    case 'A':
+                        movePlayer(-1, 0);
+                        break;
+                    case 'ArrowRight':
+                    case 'd':
+                    case 'D':
+                        movePlayer(1, 0);
+                        break;
+                    case 'r':
+                    case 'R':
+                        loadLevel(gameState.currentLevel);
+                        break;
+                }
+            });
+            
+            // 触摸滑动控制
+            let touchStartX = 0;
+            let touchStartY = 0;
+            
+            gameGrid.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                e.preventDefault();
+            });
+            
+            gameGrid.addEventListener('touchend', (e) => {
+                const touchEndX = e.changedTouches[0].clientX;
+                const touchEndY = e.changedTouches[0].clientY;
+                
+                const dx = touchEndX - touchStartX;
+                const dy = touchEndY - touchStartY;
+                
+                // 判断滑动方向
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    // 水平滑动
+                    if (dx > 20) movePlayer(1, 0);  // 右滑
+                    else if (dx < -20) movePlayer(-1, 0); // 左滑
+                } else {
+                    // 垂直滑动
+                    if (dy > 20) movePlayer(0, 1);  // 下滑
+                    else if (dy < -20) movePlayer(0, -1); // 上滑
+                }
+                
+                e.preventDefault();
+            });
+        }
+
+        // 启动游戏
+        window.onload = initGame;
+    </script>
+</body>
+</html>
