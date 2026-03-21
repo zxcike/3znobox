@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.75, maximum-scale=0.75, user-scalable=no">
+    <title>德州扑克资金流动模拟器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        /* 全局缩放容器 */
+        .scale-container {
+            transform: scale(0.75);
+            transform-origin: top left;
+            width: 133.333%; /* 100% / 0.75 = 133.333% */
+            height: 133.333%;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: auto;
+            padding: 10px;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            min-height: 95vh;
+        }
+        
+        /* 顶部栏样式 */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background-color: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .history-btn {
+            background: linear-gradient(to right, #3a7bd5, #00d2ff);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+        
+        .history-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 8px rgba(0, 210, 255, 0.5);
+        }
+        
+        .win-rate-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+        
+        .win-rate-btn {
+            background: linear-gradient(to right, #9b59b6, #8e44ad);
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+        }
+        
+        .win-rate-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .win-rate-display {
+            font-size: 0.9em;
+            font-weight: bold;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .currency-display {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .currency-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .currency-item:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+        
+        .currency-icon {
+            font-size: 1em;
+        }
+        
+        .money-icon {
+            color: gold;
+        }
+        
+        .diamond-icon {
+            color: #00ffff;
+        }
+        
+        /* 主游戏区域 */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+        
+        .game-title {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #ffd700;
+            text-shadow: 0 0 4px rgba(255, 215, 0, 0.5);
+            font-size: 1.5em;
+        }
+        
+        /* 场次选择区域 */
+        .game-levels {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .level-card {
+            padding: 12px 8px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 120px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .level-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        
+        .level-name {
+            font-size: 1em;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .level-base {
+            font-size: 0.8em;
+            margin-bottom: 4px;
+        }
+        
+        .level-requirement {
+            font-size: 0.7em;
+            padding: 2px 5px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            margin-bottom: 2px;
+        }
+        
+        /* 场次背景颜色 */
+        .level-low {
+            background: linear-gradient(to bottom, #2ecc71, #27ae60);
+        }
+        
+        .level-medium {
+            background: linear-gradient(to bottom, #3498db, #2980b9);
+        }
+        
+        .level-high {
+            background: linear-gradient(to bottom, #f1c40f, #f39c12);
+        }
+        
+        .level-top {
+            background: linear-gradient(to bottom, #e74c3c, #c0392b);
+        }
+        
+        .level-supreme {
+            background: linear-gradient(to bottom, #ffd700, #ffa500);
+        }
+        
+        .level-hell {
+            background: linear-gradient(to bottom, #7f8c8d, #2c3e50);
+        }
+        
+        /* 游戏区域 */
+        .game-area {
+            background-color: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            padding: 15px;
+            flex-grow: 1;
+            display: none;
+            flex-direction: column;
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 8px;
+            border-radius: 6px;
+        }
+        
+        .round-info {
+            font-size: 1em;
+            color: #ffd700;
+        }
+        
+        .players-display {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .player {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 6px;
+            width: 18%;
+        }
+        
+        .player.me {
+            background-color: rgba(0, 150, 255, 0.3);
+            border: 1.5px solid #0096ff;
+        }
+        
+        .player-name {
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 0.9em;
+        }
+        
+        .player-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.2);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+        }
+        
+        .player-money {
+            font-size: 0.7em;
+            color: #ffd700;
+        }
+        
+        .game-result {
+            text-align: center;
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        
+        .result-text {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+        }
+        
+        .profit {
+            color: #2ecc71;
+        }
+        
+        .loss {
+            color: #e74c3c;
+        }
+        
+        .result-details {
+            font-size: 1em;
+            margin-bottom: 15px;
+        }
+        
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .control-btn {
+            padding: 8px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .start-btn {
+            background: linear-gradient(to right, #2ecc71, #27ae60);
+            color: white;
+        }
+        
+        .next-btn {
+            background: linear-gradient(to right, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .exit-btn {
+            background: linear-gradient(to right, #e74c3c, #c0392b);
+            color: white;
+        }
+        
+        .exit-btn:disabled {
+            background: linear-gradient(to right, #7f8c8d, #2c3e50);
+            color: #aaa;
+            cursor: not-allowed;
+        }
+        
+        /* 购买界面 */
+        .purchase-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .purchase-container {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 8px;
+            padding: 15px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .purchase-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .purchase-title {
+            font-size: 1.2em;
+            color: #ffd700;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+        
+        .purchase-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        
+        .purchase-option {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .purchase-option:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: scale(1.03);
+        }
+        
+        .purchase-amount {
+            font-size: 1em;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        
+        .purchase-price {
+            font-size: 0.8em;
+            color: #aaa;
+        }
+        
+        /* 历史记录 */
+        .history-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .history-container {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 8px;
+            padding: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .history-title {
+            font-size: 1.2em;
+            color: #ffd700;
+        }
+        
+        .history-list {
+            margin-top: 12px;
+        }
+        
+        .history-item {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        
+        .history-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .history-result {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .history-win {
+            color: #2ecc71;
+        }
+        
+        .history-loss {
+            color: #e74c3c;
+        }
+        
+        .history-time {
+            font-size: 0.8em;
+            color: #aaa;
+        }
+        
+        .history-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+        }
+        
+        .history-total {
+            font-weight: bold;
+            color: #ffd700;
+        }
+        
+        .history-place {
+            font-weight: bold;
+        }
+        
+        /* 图表容器 */
+        .chart-container {
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .chart-title {
+            text-align: center;
+            margin-bottom: 8px;
+            color: #ffd700;
+            font-size: 1em;
+        }
+        
+        .chart-bar {
+            height: 16px;
+            background-color: #3498db;
+            border-radius: 3px;
+            margin-bottom: 8px;
+            position: relative;
+            transition: width 1s ease-in-out;
+        }
+        
+        .chart-label {
+            position: absolute;
+            right: 4px;
+            top: 0;
+            line-height: 16px;
+            font-size: 0.8em;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1000px) {
+            .game-levels {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 700px) {
+            .game-levels {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .players-display {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .player {
+                width: 48%;
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .game-levels {
+                grid-template-columns: 1fr;
+            }
+            
+            .players-display {
+                flex-direction: column;
+            }
+            
+            .player {
+                width: 100%;
+            }
+            
+            .purchase-options {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 缩放容器 -->
+    <div class="scale-container">
+        <div class="container">
+            <!-- 顶部栏 -->
+            <div class="top-bar">
+                <button class="history-btn" id="historyBtn">查看历史对局流水</button>
+                
+                <div class="win-rate-controls">
+                    <button class="win-rate-btn" id="decreaseWinRateBtn">-</button>
+                    <div class="win-rate-display" id="winRateDisplay">20.0%</div>
+                    <button class="win-rate-btn" id="increaseWinRateBtn">+</button>
+                </div>
+                
+                <div class="currency-display">
+                    <div class="currency-item" id="moneyBtn">
+                        <span class="currency-icon money-icon">💰</span>
+                        <span id="moneyAmount">0</span>
+                    </div>
+                    <div class="currency-item" id="diamondBtn">
+                        <span class="currency-icon diamond-icon">💎</span>
+                        <span id="diamondAmount">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 游戏标题 -->
+            <h1 class="game-title">德州扑克资金流动模拟器</h1>
+            
+            <!-- 场次选择 -->
+            <div class="game-levels" id="gameLevels">
+                <!-- 场次将通过JavaScript动态生成 -->
+            </div>
+            
+            <!-- 游戏区域 -->
+            <div class="game-area" id="gameArea">
+                <div class="game-info">
+                    <div class="current-level" id="currentLevel">当前场次：低级场</div>
+                    <div class="round-info" id="roundInfo">第1轮 / 共4轮</div>
+                    <div class="base-score" id="baseScore">底分：5</div>
+                </div>
+                
+                <div class="players-display" id="playersDisplay">
+                    <!-- 玩家信息将通过JavaScript动态生成 -->
+                </div>
+                
+                <div class="game-result" id="gameResult">
+                    <!-- 游戏结果将通过JavaScript动态生成 -->
+                </div>
+                
+                <div class="game-controls">
+                    <button class="control-btn start-btn" id="startGameBtn">开始游戏</button>
+                    <button class="control-btn next-btn" id="nextRoundBtn" style="display: none;">下一轮</button>
+                    <button class="control-btn exit-btn" id="exitGameBtn" disabled>退出游戏</button>
+                </div>
+                
+                <!-- 图表容器 -->
+                <div class="chart-container" id="chartContainer">
+                    <h3 class="chart-title">本轮游戏成绩图</h3>
+                    <div id="chartBars">
+                        <!-- 图表柱状图将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 购买金币界面 -->
+    <div class="purchase-overlay" id="moneyPurchaseOverlay">
+        <div class="purchase-container">
+            <div class="purchase-header">
+                <h2 class="purchase-title">用💎购买💰</h2>
+                <button class="close-btn" id="closeMoneyBtn">×</button>
+            </div>
+            <div class="purchase-options" id="moneyOptions">
+                <!-- 金币购买选项将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- 购买钻石界面 -->
+    <div class="purchase-overlay" id="diamondPurchaseOverlay">
+        <div class="purchase-container">
+            <div class="purchase-header">
+                <h2 class="purchase-title">用RMB购买💎</h2>
+                <button class="close-btn" id="closeDiamondBtn">×</button>
+            </div>
+            <div class="purchase-options" id="diamondOptions">
+                <!-- 钻石购买选项将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- 历史记录界面 -->
+    <div class="history-overlay" id="historyOverlay">
+        <div class="history-container">
+            <div class="history-header">
+                <h2 class="history-title">历史对局流水</h2>
+                <button class="close-btn" id="closeHistoryBtn">×</button>
+            </div>
+            <div class="history-list" id="historyList">
+                <!-- 历史记录将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 游戏数据
+        const gameData = {
+            money: 0,
+            diamond: 0,
+            currentLevel: null,
+            currentRound: 0,
+            totalRounds: 4,
+            gameInProgress: false,
+            roundResults: [],
+            gameHistory: [],
+            playerNames: ['我', 'AI玩家1', 'AI玩家2', 'AI玩家3', 'AI玩家4'],
+            baseScoreMultipliers: [480, 720, 1080, 1440, 1800, 2160, 2500, 3000, 3400, 4000],
+            initialMoney: 0, // 游戏开始前的资金
+            winRate: 20.0, // 初始胜率20%
+            
+            // 场次配置
+            levels: [
+                {
+                    id: 1,
+                    name: "低级场",
+                    baseScore: 5,
+                    minMoney: 1000,
+                    ticketPrice: 300,
+                    bgClass: "level-low"
+                },
+                {
+                    id: 2,
+                    name: "中级场",
+                    baseScore: 150,
+                    minMoney: 5000,
+                    ticketPrice: 1500,
+                    bgClass: "level-medium"
+                },
+                {
+                    id: 3,
+                    name: "高级场",
+                    baseScore: 1500,
+                    minMoney: 40000,
+                    ticketPrice: 15000,
+                    bgClass: "level-high"
+                },
+                {
+                    id: 4,
+                    name: "顶级场",
+                    baseScore: 4500,
+                    minMoney: 150000,
+                    ticketPrice: 60000,
+                    bgClass: "level-top"
+                },
+                {
+                    id: 5,
+                    name: "至尊场",
+                    baseScore: 30000,
+                    minMoney: 800000,
+                    ticketPrice: 180000,
+                    bgClass: "level-supreme"
+                },
+                {
+                    id: 6,
+                    name: "地狱场",
+                    baseScore: 750000,
+                    minMoney: 16000000,
+                    ticketPrice: 1200000,
+                    bgClass: "level-hell"
+                }
+            ],
+            
+            // 金币购买选项
+            moneyOptions: [
+                {diamond: 30, money: 43200},
+                {diamond: 60, money: 91200},
+                {diamond: 100, money: 160000},
+                {diamond: 200, money: 330000},
+                {diamond: 500, money: 860000},
+                {diamond: 1000, money: 1800000},
+                {diamond: 2000, money: 3740000},
+                {diamond: 3000, money: 5820000},
+                {diamond: 5000, money: 10100000},
+                {diamond: 8000, money: 16800000},
+                {diamond: 20000, money: 44250000},
+                {diamond: 60000, money: 136750000}
+            ],
+            
+            // 钻石购买选项
+            diamondOptions: [
+                {rmb: 3, diamond: 30},
+                {rmb: 10, diamond: 100},
+                {rmb: 20, diamond: 200},
+                {rmb: 50, diamond: 500},
+                {rmb: 100, diamond: 1000},
+                {rmb: 200, diamond: 2000},
+                {rmb: 300, diamond: 3000},
+                {rmb: 500, diamond: 5000},
+                {rmb: 800, diamond: 8000},
+                {rmb: 2000, diamond: 20000},
+                {rmb: 10000, diamond: 100000}
+            ]
+        };
+        
+        // DOM元素
+        const moneyAmountEl = document.getElementById('moneyAmount');
+        const diamondAmountEl = document.getElementById('diamondAmount');
+        const gameLevelsEl = document.getElementById('gameLevels');
+        const gameAreaEl = document.getElementById('gameArea');
+        const currentLevelEl = document.getElementById('currentLevel');
+        const roundInfoEl = document.getElementById('roundInfo');
+        const baseScoreEl = document.getElementById('baseScore');
+        const playersDisplayEl = document.getElementById('playersDisplay');
+        const gameResultEl = document.getElementById('gameResult');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const nextRoundBtn = document.getElementById('nextRoundBtn');
+        const exitGameBtn = document.getElementById('exitGameBtn');
+        const chartContainerEl = document.getElementById('chartContainer');
+        const chartBarsEl = document.getElementById('chartBars');
+        const historyOverlayEl = document.getElementById('historyOverlay');
+        const historyListEl = document.getElementById('historyList');
+        const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+        const winRateDisplayEl = document.getElementById('winRateDisplay');
+        const increaseWinRateBtn = document.getElementById('increaseWinRateBtn');
+        const decreaseWinRateBtn = document.getElementById('decreaseWinRateBtn');
+        
+        // 货币格式化函数 - 修复负数处理
+        function formatMoney(amount, withSymbol = true) {
+            const isNegative = amount < 0;
+            const absAmount = Math.abs(amount);
+            
+            if (absAmount === 0) return "0";
+            
+            let formattedAmount = "";
+            let unit = "";
+            
+            if (absAmount >= 100000000) { // 大于等于1亿
+                const value = absAmount / 100000000;
+                // 保留4位有效数字
+                if (value >= 1000) {
+                    formattedAmount = Math.round(value).toString();
+                } else if (value >= 100) {
+                    formattedAmount = value.toFixed(1);
+                } else if (value >= 10) {
+                    formattedAmount = value.toFixed(2);
+                } else {
+                    formattedAmount = value.toFixed(3);
+                }
+                
+                // 移除末尾的零和小数点
+                formattedAmount = parseFloat(formattedAmount).toString();
+                unit = "亿";
+            } else if (absAmount >= 10000) { // 大于等于1万
+                const value = absAmount / 10000;
+                // 保留4位有效数字
+                if (value >= 1000) {
+                    formattedAmount = Math.round(value).toString();
+                } else if (value >= 100) {
+                    formattedAmount = value.toFixed(1);
+                } else if (value >= 10) {
+                    formattedAmount = value.toFixed(2);
+                } else {
+                    formattedAmount = value.toFixed(3);
+                }
+                
+                // 移除末尾的零和小数点
+                formattedAmount = parseFloat(formattedAmount).toString();
+                unit = "万";
+            } else {
+                formattedAmount = absAmount.toLocaleString();
+            }
+            
+            // 添加负号前缀
+            const prefix = isNegative ? "-" : "";
+            
+            return withSymbol ? prefix + formattedAmount + unit + "💰" : prefix + formattedAmount + unit;
+        }
+        
+        // 格式化金额显示，不包含单位符号
+        function formatMoneyNoSymbol(amount) {
+            return formatMoney(amount, false);
+        }
+        
+        // 格式化金额显示，包含单位符号
+        function formatMoneyWithSymbol(amount) {
+            return formatMoney(amount, true);
+        }
+        
+        // 获取当前时间字符串（精确到秒）
+        function getCurrentTimeString() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        }
+        
+        // 更新胜率显示
+        function updateWinRateDisplay() {
+            winRateDisplayEl.textContent = gameData.winRate.toFixed(1) + "%";
+        }
+        
+        // 增加胜率
+        function increaseWinRate() {
+            gameData.winRate = Math.min(100, gameData.winRate + 2);
+            updateWinRateDisplay();
+            saveGameData();
+        }
+        
+        // 减少胜率
+        function decreaseWinRate() {
+            gameData.winRate = Math.max(0, gameData.winRate - 2);
+            updateWinRateDisplay();
+            saveGameData();
+        }
+        
+        // 初始化函数
+        function init() {
+            // 生成场次选择卡片
+            generateLevelCards();
+            
+            // 生成购买选项
+            generatePurchaseOptions();
+            
+            // 初始化事件监听
+            initEventListeners();
+            
+            // 更新货币显示
+            updateCurrencyDisplay();
+            
+            // 更新胜率显示
+            updateWinRateDisplay();
+        }
+        
+        // 生成场次选择卡片
+        function generateLevelCards() {
+            gameLevelsEl.innerHTML = '';
+            
+            gameData.levels.forEach(level => {
+                const levelCard = document.createElement('div');
+                levelCard.className = `level-card ${level.bgClass}`;
+                levelCard.dataset.levelId = level.id;
+                
+                levelCard.innerHTML = `
+                    <div>
+                        <div class="level-name">${level.name}</div>
+                        <div class="level-base">底分: ${level.baseScore}</div>
+                    </div>
+                    <div>
+                        <div class="level-requirement">入场要求: ${formatMoneyNoSymbol(level.minMoney)}💰</div>
+                        <div class="level-requirement">门票: ${formatMoneyNoSymbol(level.ticketPrice)}💰</div>
+                    </div>
+                `;
+                
+                levelCard.addEventListener('click', () => selectLevel(level));
+                gameLevelsEl.appendChild(levelCard);
+            });
+        }
+        
+        // 生成购买选项
+        function generatePurchaseOptions() {
+            const moneyOptionsEl = document.getElementById('moneyOptions');
+            const diamondOptionsEl = document.getElementById('diamondOptions');
+            
+            // 生成金币购买选项
+            gameData.moneyOptions.forEach(option => {
+                const optionEl = document.createElement('div');
+                optionEl.className = 'purchase-option';
+                optionEl.innerHTML = `
+                    <div class="purchase-amount">${option.diamond}💎 → ${formatMoneyNoSymbol(option.money)}💰</div>
+                    <div class="purchase-price">点击购买</div>
+                `;
+                optionEl.addEventListener('click', () => purchaseMoney(option.diamond, option.money));
+                moneyOptionsEl.appendChild(optionEl);
+            });
+            
+            // 生成钻石购买选项
+            gameData.diamondOptions.forEach(option => {
+                const optionEl = document.createElement('div');
+                optionEl.className = 'purchase-option';
+                optionEl.innerHTML = `
+                    <div class="purchase-amount">${option.rmb}元 → ${option.diamond}💎</div>
+                    <div class="purchase-price">点击购买</div>
+                `;
+                optionEl.addEventListener('click', () => purchaseDiamond(option.rmb, option.diamond));
+                diamondOptionsEl.appendChild(optionEl);
+            });
+        }
+        
+        // 初始化事件监听
+        function initEventListeners() {
+            // 历史记录按钮
+            document.getElementById('historyBtn').addEventListener('click', showHistory);
+            closeHistoryBtn.addEventListener('click', hideHistory);
+            
+            // 胜率调整按钮
+            increaseWinRateBtn.addEventListener('click', increaseWinRate);
+            decreaseWinRateBtn.addEventListener('click', decreaseWinRate);
+            
+            // 货币购买按钮
+            document.getElementById('moneyBtn').addEventListener('click', () => {
+                document.getElementById('moneyPurchaseOverlay').style.display = 'flex';
+            });
+            
+            document.getElementById('diamondBtn').addEventListener('click', () => {
+                document.getElementById('diamondPurchaseOverlay').style.display = 'flex';
+            });
+            
+            // 关闭购买界面按钮
+            document.getElementById('closeMoneyBtn').addEventListener('click', () => {
+                document.getElementById('moneyPurchaseOverlay').style.display = 'none';
+            });
+            
+            document.getElementById('closeDiamondBtn').addEventListener('click', () => {
+                document.getElementById('diamondPurchaseOverlay').style.display = 'none';
+            });
+            
+            // 游戏控制按钮
+            startGameBtn.addEventListener('click', startGame);
+            nextRoundBtn.addEventListener('click', nextRound);
+            exitGameBtn.addEventListener('click', exitGame);
+            
+            // 点击遮罩层关闭
+            document.querySelectorAll('.purchase-overlay, .history-overlay').forEach(overlay => {
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) {
+                        overlay.style.display = 'none';
+                    }
+                });
+            });
+        }
+        
+        // 选择场次
+        function selectLevel(level) {
+            // 检查是否有足够资金
+            if (gameData.money < level.minMoney) {
+                alert(`进入${level.name}需要至少${formatMoneyNoSymbol(level.minMoney)}💰，您的资金不足！`);
+                return;
+            }
+            
+            // 设置当前场次
+            gameData.currentLevel = level;
+            
+            // 更新显示
+            currentLevelEl.textContent = `当前场次：${level.name}`;
+            baseScoreEl.textContent = `底分：${level.baseScore}`;
+            
+            // 显示游戏区域
+            gameAreaEl.style.display = 'flex';
+            gameLevelsEl.style.display = 'none';
+            
+            // 重置游戏状态
+            resetGame();
+            
+            // 生成玩家显示
+            generatePlayersDisplay();
+        }
+        
+        // 生成玩家显示
+        function generatePlayersDisplay() {
+            playersDisplayEl.innerHTML = '';
+            
+            gameData.playerNames.forEach((name, index) => {
+                const playerEl = document.createElement('div');
+                playerEl.className = `player ${index === 0 ? 'me' : ''}`;
+                
+                const avatarText = index === 0 ? '😎' : ['🤖', '👾', '👽', '🤡'][index-1];
+                const moneyText = index === 0 ? `${formatMoneyNoSymbol(gameData.money)}💰` : '无限💰';
+                
+                playerEl.innerHTML = `
+                    <div class="player-name">${name}</div>
+                    <div class="player-avatar">${avatarText}</div>
+                    <div class="player-money">${moneyText}</div>
+                `;
+                
+                playersDisplayEl.appendChild(playerEl);
+            });
+        }
+        
+        // 重置游戏状态
+        function resetGame() {
+            gameData.currentRound = 0;
+            gameData.roundResults = [];
+            gameData.gameInProgress = false;
+            gameData.initialMoney = 0; // 重置初始资金
+            
+            // 重置按钮状态
+            startGameBtn.style.display = 'block';
+            startGameBtn.textContent = '开始游戏';
+            nextRoundBtn.style.display = 'none';
+            exitGameBtn.disabled = true;
+            
+            // 清空结果和图表
+            gameResultEl.innerHTML = '<h2>准备开始游戏</h2><p>点击"开始游戏"按钮进行第一轮对决</p>';
+            chartContainerEl.style.display = 'none';
+            
+            // 更新回合信息
+            updateRoundInfo();
+        }
+        
+        // 更新回合信息
+        function updateRoundInfo() {
+            roundInfoEl.textContent = `第${gameData.currentRound}轮 / 共${gameData.totalRounds}轮`;
+        }
+        
+        // 开始游戏
+        function startGame() {
+            if (!gameData.currentLevel) return;
+            
+            // 检查门票
+            if (gameData.money < gameData.currentLevel.ticketPrice) {
+                alert(`门票需要${formatMoneyNoSymbol(gameData.currentLevel.ticketPrice)}💰，您的资金不足！`);
+                return;
+            }
+            
+            // 记录游戏开始前的资金（扣除门票前）
+            gameData.initialMoney = gameData.money;
+            
+            // 扣除门票
+            gameData.money -= gameData.currentLevel.ticketPrice;
+            updateCurrencyDisplay();
+            
+            // 更新游戏状态
+            gameData.currentRound = 1;
+            gameData.gameInProgress = true;
+            
+            // 更新按钮状态
+            startGameBtn.style.display = 'none';
+            startGameBtn.textContent = '开始游戏（下一局）';
+            nextRoundBtn.style.display = 'block';
+            exitGameBtn.disabled = false; // 游戏进行中不能退出
+            
+            // 更新回合信息
+            updateRoundInfo();
+            
+            // 执行一轮游戏
+            playRound();
+        }
+        
+        // 下一轮
+        function nextRound() {
+            if (!gameData.gameInProgress) return;
+            
+            // 增加回合数
+            gameData.currentRound++;
+            
+            // 检查是否结束
+            if (gameData.currentRound > gameData.totalRounds) {
+                endGame();
+                return;
+            }
+            
+            // 更新回合信息
+            updateRoundInfo();
+            
+            // 执行一轮游戏
+            playRound();
+        }
+        
+        // 执行一轮游戏
+        function playRound() {
+            if (!gameData.currentLevel) return;
+            
+            // 随机选择一个倍数
+            const multiplier = gameData.baseScoreMultipliers[
+                Math.floor(Math.random() * gameData.baseScoreMultipliers.length)
+            ];
+            
+            // 计算得分
+            const score = multiplier * gameData.currentLevel.baseScore;
+            
+            // 计算盈亏（使用当前胜率计算）
+            const isWin = Math.random() < (gameData.winRate / 100); // 使用当前胜率
+            let profitLoss = 0;
+            let actualProfitLoss = 0; // 实际盈亏
+            
+            if (isWin) {
+                profitLoss = score * 4; // 理论赢得的钱
+                
+                // 计算可收取的最大资金量
+                const startMoney = gameData.initialMoney; // 进入游戏时的资金（扣除门票前）
+                const maxCollectFromStartMoney = startMoney * 4; // 入场时资金的4倍
+                const maxCollectFromCurrentMoney = gameData.money * 4; // 当前资金的4倍
+                const maxCollectFromBaseScore = gameData.currentLevel.baseScore * 4000; // 底分的4000倍
+                
+                // 计算实际可获得的资金量
+                // 首先，计算入场时资金的4倍和当前资金的4倍中的较小值
+                const maxCollectFromMoney = Math.min(maxCollectFromStartMoney, maxCollectFromCurrentMoney);
+                
+                // 然后，取这个较小值和底分4000倍中的较大值
+                const maxCollect = Math.max(maxCollectFromMoney, maxCollectFromBaseScore);
+                
+                // 实际赢得的钱不能超过最大收取量
+                actualProfitLoss = Math.min(profitLoss, maxCollect);
+                gameData.money += actualProfitLoss;
+            } else {
+                profitLoss = -score; // 理论输掉的钱
+                
+                // 如果输钱，确保不会变成负数
+                if (gameData.money + profitLoss < 0) {
+                    actualProfitLoss = -gameData.money; // 只输掉所有剩余资金
+                    gameData.money = 0; // 资金归零
+                } else {
+                    actualProfitLoss = profitLoss; // 减去分数
+                    gameData.money += actualProfitLoss;
+                }
+            }
+            
+            // 计算可收取的最大资金量（用于显示）
+            const startMoney = gameData.initialMoney; // 进入游戏时的资金
+            const maxCollectFromStartMoney = startMoney * 4; // 入场时资金的4倍
+            const maxCollectFromCurrentMoney = (gameData.money - actualProfitLoss) * 4; // 当前资金的4倍（注意：这里是计算前的资金）
+            const maxCollectFromBaseScore = gameData.currentLevel.baseScore * 4000; // 底分的4000倍
+            
+            const maxCollectFromMoney = Math.min(maxCollectFromStartMoney, maxCollectFromCurrentMoney);
+            const maxCollect = Math.max(maxCollectFromMoney, maxCollectFromBaseScore);
+            
+            // 记录结果
+            const roundResult = {
+                round: gameData.currentRound,
+                multiplier,
+                score,
+                isWin,
+                profitLoss: actualProfitLoss, // 使用实际盈亏
+                theoreticalProfitLoss: profitLoss, // 理论盈亏
+                maxCollect,
+                currentMoney: gameData.money
+            };
+            
+            gameData.roundResults.push(roundResult);
+            
+            // 更新货币显示
+            updateCurrencyDisplay();
+            
+            // 显示结果
+            displayRoundResult(roundResult);
+            
+            // 检查是否破产
+            if (gameData.money <= 0) {
+                alert('您已破产！游戏提前结束。');
+                endGame();
+            }
+            
+            // 更新玩家显示
+            generatePlayersDisplay();
+        }
+        
+        // 显示回合结果
+        function displayRoundResult(result) {
+            const resultClass = result.isWin ? 'profit' : 'loss';
+            const resultText = result.isWin ? '获胜!' : '失败!';
+            const profitText = result.isWin ? 
+                `+${formatMoneyNoSymbol(result.profitLoss)}💰` : 
+                `${formatMoneyNoSymbol(result.profitLoss)}💰`;
+            
+            // 检查是否有理论盈利和实际盈利的差异
+            let profitDifferenceNote = '';
+            if (result.isWin && result.theoreticalProfitLoss !== result.profitLoss) {
+                profitDifferenceNote = `<p>（理论盈利：${formatMoneyNoSymbol(result.theoreticalProfitLoss)}💰，但因上限限制，实际获得：${formatMoneyNoSymbol(result.profitLoss)}💰）</p>`;
+            }
+            
+            gameResultEl.innerHTML = `
+                <h2 class="result-text ${resultClass}">${resultText}</h2>
+                <div class="result-details">
+                    <p>本轮得分倍数: ${result.multiplier}</p>
+                    <p>基础得分: ${formatMoneyNoSymbol(result.score)}💰</p>
+                    <p>您的盈亏: <span class="${resultClass}">${profitText}</span></p>
+                    ${profitDifferenceNote}
+                    <p>当前资金: ${formatMoneyNoSymbol(result.currentMoney)}💰</p>
+                    <p>单次可获得的最大资金量: ${formatMoneyNoSymbol(result.maxCollect)}💰</p>
+                </div>
+                <p>${result.isWin ? '恭喜您赢得本轮！' : '很遗憾，本轮输了。'}</p>
+            `;
+        }
+        
+        // 结束游戏
+        function endGame() {
+            gameData.gameInProgress = false;
+            nextRoundBtn.style.display = 'none';
+            startGameBtn.style.display = 'block';
+            startGameBtn.textContent = '开始游戏（下一局）';
+            exitGameBtn.disabled = false; // 游戏结束后可以退出
+            
+            // 显示图表
+            displayChart();
+            
+            // 添加到历史记录
+            addToHistory();
+        }
+        
+        // 显示图表
+        function displayChart() {
+            chartContainerEl.style.display = 'block';
+            chartBarsEl.innerHTML = '';
+            
+            // 计算最大绝对值用于缩放
+            const maxAbsValue = Math.max(...gameData.roundResults.map(r => Math.abs(r.profitLoss)), 1);
+            
+            gameData.roundResults.forEach((result, index) => {
+                const bar = document.createElement('div');
+                bar.className = 'chart-bar';
+                
+                // 计算宽度百分比
+                const widthPercent = Math.min(Math.abs(result.profitLoss) / maxAbsValue * 100, 100);
+                bar.style.width = `${widthPercent}%`;
+                
+                // 设置颜色
+                bar.style.backgroundColor = result.isWin ? '#2ecc71' : '#e74c3c';
+                
+                // 设置标签
+                const label = document.createElement('div');
+                label.className = 'chart-label';
+                label.textContent = `${result.isWin ? '+' : ''}${formatMoneyNoSymbol(result.profitLoss)}💰`;
+                label.style.color = result.isWin ? '#2ecc71' : '#e74c3c';
+                
+                bar.appendChild(label);
+                
+                // 添加回合标签
+                const roundLabel = document.createElement('div');
+                roundLabel.textContent = `第${index + 1}轮`;
+                roundLabel.style.marginBottom = '5px';
+                
+                chartBarsEl.appendChild(roundLabel);
+                chartBarsEl.appendChild(bar);
+            });
+            
+            // 添加总计
+            const totalProfitLoss = gameData.roundResults.reduce((sum, result) => sum + result.profitLoss, 0);
+            const totalBar = document.createElement('div');
+            totalBar.className = 'chart-bar';
+            
+            const totalWidthPercent = Math.min(Math.abs(totalProfitLoss) / maxAbsValue * 100, 100);
+            totalBar.style.width = `${totalWidthPercent}%`;
+            totalBar.style.backgroundColor = totalProfitLoss >= 0 ? '#2ecc71' : '#e74c3c';
+            totalBar.style.marginTop = '20px';
+            
+            const totalLabel = document.createElement('div');
+            totalLabel.className = 'chart-label';
+            totalLabel.textContent = `总计: ${totalProfitLoss >= 0 ? '+' : ''}${formatMoneyNoSymbol(totalProfitLoss)}💰`;
+            totalLabel.style.color = totalProfitLoss >= 0 ? '#2ecc71' : '#e74c3c';
+            
+            totalBar.appendChild(totalLabel);
+            
+            const totalRoundLabel = document.createElement('div');
+            totalRoundLabel.textContent = '总计';
+            totalRoundLabel.style.marginBottom = '5px';
+            totalRoundLabel.style.marginTop = '10px';
+            
+            chartBarsEl.appendChild(totalRoundLabel);
+            chartBarsEl.appendChild(totalBar);
+        }
+        
+        // 添加到历史记录
+        function addToHistory() {
+            // 计算整局游戏的资金变化：结束时的资金 - 游戏开始前的资金
+            const finalMoney = gameData.money;
+            const initialMoney = gameData.initialMoney;
+            const netChange = finalMoney - initialMoney; // 正数为赢，负数为输
+            
+            const historyEntry = {
+                time: getCurrentTimeString(), // 精确到秒的时间
+                result: netChange >= 0 ? "胜" : "负", // 胜还是负
+                level: gameData.currentLevel.name, // 场次
+                profit: netChange >= 0 ? `+${formatMoneyNoSymbol(netChange)}💰` : `${formatMoneyNoSymbol(netChange)}💰`, // 盈亏金额
+                netChange: netChange, // 净变化（用于排序和统计）
+                initialMoney: initialMoney, // 游戏开始前的资金
+                finalMoney: finalMoney, // 游戏结束时的资金
+                ticketPrice: gameData.currentLevel.ticketPrice
+            };
+            
+            gameData.gameHistory.unshift(historyEntry);
+            
+            // 保存到本地存储
+            saveGameData();
+        }
+        
+        // 显示历史记录
+        function showHistory() {
+            const historyListEl = document.getElementById('historyList');
+            historyListEl.innerHTML = '';
+            
+            if (gameData.gameHistory.length === 0) {
+                historyListEl.innerHTML = '<div class="history-item">暂无历史记录</div>';
+            } else {
+                gameData.gameHistory.forEach(entry => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    
+                    const resultClass = entry.result === "胜" ? 'history-win' : 'history-loss';
+                    
+                    historyItem.innerHTML = `
+                        <div class="history-item-header">
+                            <div class="history-result ${resultClass}">${entry.result}</div>
+                            <div class="history-time">${entry.time}</div>
+                        </div>
+                        <div class="history-details">
+                            <div class="history-place">${entry.level}</div>
+                            <div class="history-total">${entry.profit}</div>
+                        </div>
+                    `;
+                    
+                    historyListEl.appendChild(historyItem);
+                });
+            }
+            
+            historyOverlayEl.style.display = 'flex';
+        }
+        
+        // 隐藏历史记录
+        function hideHistory() {
+            historyOverlayEl.style.display = 'none';
+        }
+        
+        // 退出游戏
+        function exitGame() {
+            gameAreaEl.style.display = 'none';
+            gameLevelsEl.style.display = 'grid';
+        }
+        
+        // 购买金币
+        function purchaseMoney(diamondCost, moneyAmount) {
+            if (gameData.diamond < diamondCost) {
+                alert('钻石不足！');
+                return;
+            }
+            
+            gameData.diamond -= diamondCost;
+            gameData.money += moneyAmount;
+            
+            updateCurrencyDisplay();
+            alert(`成功购买 ${formatMoneyNoSymbol(moneyAmount)}💰！`);
+            
+            // 关闭购买界面
+            document.getElementById('moneyPurchaseOverlay').style.display = 'none';
+            
+            // 保存数据
+            saveGameData();
+        }
+        
+        // 购买钻石
+        function purchaseDiamond(rmbCost, diamondAmount) {
+            // 在实际应用中，这里应该连接支付接口
+            // 这里我们只是模拟购买
+            gameData.diamond += diamondAmount;
+            
+            updateCurrencyDisplay();
+            alert(`成功购买 ${diamondAmount}💎！`);
+            
+            // 关闭购买界面
+            document.getElementById('diamondPurchaseOverlay').style.display = 'none';
+            
+            // 保存数据
+            saveGameData();
+        }
+        
+        // 更新货币显示
+        function updateCurrencyDisplay() {
+            moneyAmountEl.textContent = formatMoneyNoSymbol(gameData.money);
+            diamondAmountEl.textContent = gameData.diamond.toLocaleString();
+            
+            // 更新玩家显示（如果游戏正在进行）
+            if (gameData.gameInProgress || gameData.currentLevel) {
+                generatePlayersDisplay();
+            }
+        }
+        
+        // 保存游戏数据到本地存储
+        function saveGameData() {
+            const saveData = {
+                money: gameData.money,
+                diamond: gameData.diamond,
+                gameHistory: gameData.gameHistory,
+                winRate: gameData.winRate
+            };
+            
+            localStorage.setItem('pokerSimulatorData', JSON.stringify(saveData));
+        }
+        
+        // 加载游戏数据
+        function loadGameData() {
+            const savedData = localStorage.getItem('pokerSimulatorData');
+            
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    gameData.money = data.money || 0;
+                    gameData.diamond = data.diamond || 0;
+                    gameData.gameHistory = data.gameHistory || [];
+                    gameData.winRate = data.winRate || 20.0;
+                } catch (e) {
+                    console.error('加载游戏数据失败:', e);
+                }
+            }
+        }
+        
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            // 先加载数据
+            loadGameData();
+            
+            // 然后初始化界面
+            init();
+        });
+    </script>
+</body>
+</html>
