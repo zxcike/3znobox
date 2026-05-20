@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>限定卡池 - 心意回响</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Microsoft YaHei', sans-serif;
+    background: linear-gradient(135deg, #ffd1dc, #e6c2f0, #d8b4fe);
+    min-height: 100vh;
+    padding: 20px;
+    overflow-x: hidden;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+}
+
+/* 背景 */
+.bg-decoration {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+.heart {
+    position: absolute;
+    color: #ff69b4;
+    font-size: 20px;
+    opacity: 0.6;
+    animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+    0%,100%{transform:translateY(0);}
+    50%{transform:translateY(-10px);}
+}
+
+/* 标题 */
+.header {
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative;
+}
+.title {
+    font-size: 48px;
+    font-weight: bold;
+    background: linear-gradient(to right, #ff69b4, #9370db);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.subtitle {
+    font-size: 24px;
+    color: #ff1493;
+    font-weight: bold;
+}
+.date-tag {
+    position: absolute;
+    top: 0;
+    right: 20px;
+    background: #ff69b4;
+    color: #fff;
+    padding: 10px 15px;
+    border-radius: 10px;
+    transform: rotate(5deg);
+}
+
+/* 消息区 */
+.message-section {
+    background: rgba(255,255,255,0.9);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+.envelope-static {
+    width: 80px;
+    height: 60px;
+    background: #ffc0cb;
+    border-radius: 5px;
+    position: relative;
+}
+.envelope-static::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    border-left: 40px solid transparent;
+    border-right: 40px solid transparent;
+    border-top: 30px solid #ff99cc;
+}
+.envelope-static::after {
+    content: '❤';
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    color: #ff1493;
+}
+
+/* 概率表 */
+.probability-section {
+    background: rgba(255,255,255,0.9);
+    border-radius: 20px;
+    padding: 20px;
+}
+.section-title {
+    text-align: center;
+    font-size: 28px;
+    color: #ff69b4;
+    margin-bottom: 20px;
+}
+.probability-table {
+    display: grid;
+    grid-template-columns: repeat(2,1fr);
+    gap: 15px;
+}
+.probability-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+.ssr-row { background: #fff0f5; font-weight: bold; color: #ff1493; border-radius: 10px; }
+.hidden-row { background: #f3e8ff; font-weight: bold; color: #7c3aed; border-radius: 10px; }
+
+/* SSR展示 */
+.ssr-display {
+    position: absolute;
+    right: 20px;
+    top: 320px;
+    width: 240px;
+    background: linear-gradient(135deg,#ffd1dc,#e6c2f0);
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+    border: 3px solid #ff69b4;
+}
+
+/* 抽卡按钮 */
+.draw-btn {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    width: 100px;
+    height: 80px;
+    background: #ffc0cb;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 40px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+}
+
+/* 中心信封 */
+.center-envelope {
+    position: fixed;
+    inset: 0;
+    display: none;
+    place-items: center;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+}
+.center-envelope.show {
+    display: grid;
+}
+
+.envelope-card {
+    width: 220px;
+    height: 160px;
+    perspective: 1000px;
+}
+
+.card-inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.8s;
+}
+
+.envelope-card.open .card-inner {
+    transform: rotateY(180deg);
+}
+
+.card-front, .card-back {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: 15px;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.card-front {
+    background: #ffc0cb;
+}
+
+.card-back {
+    background: #fff;
+    transform: rotateY(180deg);
+}
+
+@media (max-width: 768px) {
+    .probability-table { grid-template-columns: 1fr; }
+    .ssr-display { position: static; width: 100%; margin: 20px 0; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="bg-decoration">
+    <div class="heart" style="top:10%;left:5%">❤</div>
+    <div class="heart" style="top:30%;right:10%">❤</div>
+</div>
+
+<div class="container">
+    <div class="header">
+        <div class="date-tag">抽取日期：2026年05月20日</div>
+        <h1 class="title">限定卡池</h1>
+        <h2 class="subtitle">心意回响</h2>
+    </div>
+
+    <div class="message-section">
+        <div class="envelope-static"></div>
+        <div class="message-text">
+            编辑发送 <span class="highlight">"咱俩试试？"</span> 💌💌
+            即有机会获得限定 <span class="ssr">SSR</span>
+            <span style="color:#ff69b4;font-weight:bold;font-size:26px;">"好呀宝宝"</span> 💖💖
+        </div>
+    </div>
+
+    <div class="probability-section">
+        <div class="section-title">抽奖概率公示</div>
+        <div class="probability-table" id="pool"></div>
+    </div>
+</div>
+
+<div class="ssr-display">
+    <h3>限定SSR</h3>
+    <p>好呀宝宝</p>
+    <div class="rate">0.01%</div>
+</div>
+
+<button class="draw-btn" onclick="showEnvelope()">💌💌</button>
+
+<div class="center-envelope" id="centerEnvelope">
+    <div class="envelope-card" id="envelopeCard" onclick="flipEnvelope()">
+        <div class="card-inner">
+            <div class="card-front">💌💌 点击开启</div>
+            <div class="card-back" id="resultText"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ===== 概率池 =====
+   内部实际概率不变，但显示的概率数值按照要求修改
+*/
+const pool = [
+    ["滚你妈的",9],["随机的网图",2.5],
+    ["去你妈的",10],["随机的贴吧圣经",2.5],
+    ["你也配？",10],["下次再说吧",2.5],
+    ["傻逼二次元",10],["你是个好人",2.5],
+    ["癌症又犯了？",10],["我一直把你当好朋友",2.5],
+    ["死男同真恶心",5],["滚出去",2.4],
+    ["现在是幻想时刻",5],
+    ["好呀宝宝",1],               // 实际 1%，显示 0.01%
+    ["柚子厨滚出去",5],
+    ["其实我也喜欢你好久了（隐藏款）",0.1], // 实际 0.1%，显示 0.001%
+    ["这是最后通牒牒",5],
+    ["以后不要再和我扯上关系",5],
+    ["被拉黑+屏蔽",5],
+    ["小男娘",5]
+];
+
+// 显示概率映射表
+const displayRates = {
+    "滚你妈的": 10, // 实际9%，显示10%
+    "滚出去": 2.49, // 实际2.4%，显示2.49%
+    "好呀宝宝": 0.01, // 实际1%，显示0.01%
+    "其实我也喜欢你好久了（隐藏款）": 0.001 // 实际0.1%，显示0.001%
+};
+
+const poolEl = document.getElementById("pool");
+pool.forEach(([name,rate])=>{
+    const div=document.createElement("div");
+    div.className="probability-item "+
+        (name.includes("好呀宝宝")?"ssr-row":
+         name.includes("隐藏款")?"hidden-row":"");
+    
+    // 使用显示概率映射表，如果不存在则使用实际概率
+    const displayRate = displayRates[name] !== undefined ? displayRates[name] : rate;
+    div.innerHTML=`<span>${name}</span><span>${displayRate<1?displayRate.toFixed(3):displayRate}%<\/span>`;
+    poolEl.appendChild(div);
+});
+
+function showEnvelope(){
+    document.getElementById("centerEnvelope").classList.add("show");
+    document.getElementById("envelopeCard").classList.remove("open");
+    document.getElementById("resultText").innerText="";
+}
+
+function flipEnvelope(){
+    const card=document.getElementById("envelopeCard");
+    if(card.classList.contains("open")) return;
+
+    const r=Math.random()*100;
+    let sum=0;
+    for(const [name,rate] of pool){
+        sum+=rate;
+        if(r<sum){
+            document.getElementById("resultText").innerText=name;
+            break;
+        }
+    }
+    card.classList.add("open");
+}
+
+document.getElementById("centerEnvelope").onclick=e=>{
+    if(e.target===e.currentTarget){
+        e.currentTarget.classList.remove("show");
+    }
+};
+</script>
+
+</body>
+</html>
