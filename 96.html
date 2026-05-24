@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>对对胡算番器</title>
+<style>
+:root {
+    --tile-w: 24px;
+    --tile-h: 36px;
+    --gap: 2px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { 
+    font-family: "Microsoft YaHei", sans-serif; 
+    background: #0a2e18; 
+    color: #f0e6d3; 
+    display: flex; 
+    justify-content: center; 
+    padding-top: 5px;
+    min-height: 100vh;
+    font-size: 11px;
+}
+.container { display: flex; gap: 8px; }
+
+/* 左侧区域 */
+.left-panel { width: 250px; }
+.info-bar { 
+    display: flex; 
+    justify-content: space-between; 
+    margin-bottom: 4px;
+    font-size: 10px;
+}
+.hand-area {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 3px;
+    background: #053014;
+    padding: 5px;
+    border-radius: 3px;
+    margin-bottom: 5px;
+}
+.slot { 
+    height: calc(var(--tile-h) * 1.1); 
+    background: rgba(0,0,0,0.2); 
+    border-radius: 2px; 
+    cursor: pointer; 
+    transition: all 0.2s;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.slot.selected { box-shadow: 0 0 5px gold; transform: translateY(-2px); }
+.slot.empty { background: rgba(0,0,0,0.4); cursor: default; }
+.slot .tile-wrapper { display: flex; }
+.slot .tile { 
+    width: var(--tile-w); 
+    height: var(--tile-h); 
+    border: 1px solid #333; 
+    border-radius: 2px; 
+    background: #fff; 
+    color: #000; 
+    font-size: 13px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    margin-left: -5px;
+}
+.slot .tile:first-child { margin-left: 0; }
+.red { color: #d00; }
+
+.controls { display: flex; gap: 3px; }
+.controls button { 
+    flex: 1;
+    padding: 4px 2px; 
+    font-size: 10px; 
+    border: none; 
+    border-radius: 2px; 
+    cursor: pointer; 
+    background: #b8860b; 
+    color: #000; 
+    font-weight: bold;
+}
+.controls button:disabled { background: #333; color: #666; cursor: not-allowed; }
+
+/* 右侧区域 */
+.right-panel { 
+    width: 150px; 
+    background: #053014; 
+    padding: 5px; 
+    border-radius: 3px; 
+    font-size: 10px; 
+}
+.fan-list { margin-top: 5px; max-height: 180px; overflow-y: auto; }
+.fan-item { 
+    display: flex; 
+    justify-content: space-between; 
+    padding: 2px 0; 
+    border-bottom: 1px dashed #0a5c1a;
+}
+.fan-item.highlight { color: gold; font-weight: bold; }
+.score-display { 
+    margin-top: 6px; 
+    font-size: 12px; 
+    text-align: center; 
+    padding: 3px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 2px;
+}
+
+/* 动画界面 */
+.animation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.95);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.animation-content {
+    text-align: center;
+}
+.animation-tiles {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    max-width: 600px;
+    margin-bottom: 15px;
+}
+.animation-tile {
+    width: 40px;
+    height: 60px;
+    border: 2px solid #fff;
+    border-radius: 3px;
+    background: #fff;
+    color: #000;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 2px;
+}
+.animation-tile.joker {
+    border-color: gold;
+    background: linear-gradient(45deg, #fff, #ffe);
+}
+.animation-text {
+    font-size: 40px;
+    font-weight: bold;
+    text-shadow: 0 0 15px currentColor;
+    animation: pulse 1s infinite;
+}
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* 成绩图界面 */
+.result-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.95);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.result-content {
+    text-align: center;
+    max-width: 500px;
+}
+.result-title {
+    font-size: 36px;
+    color: gold;
+    margin-bottom: 20px;
+    text-shadow: 0 0 10px gold;
+}
+.result-score {
+    font-size: 48px;
+    color: #fff;
+    margin-bottom: 30px;
+}
+.best-rounds {
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 30px;
+}
+.best-round-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 10px 0;
+    padding: 8px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 4px;
+}
+.best-round-tiles {
+    display: flex;
+    margin-right: 15px;
+}
+.best-round-tile {
+    width: 30px;
+    height: 45px;
+    border: 1px solid #fff;
+    border-radius: 2px;
+    background: #fff;
+    color: #000;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 1px;
+}
+.best-round-tile.joker {
+    border-color: gold;
+    background: linear-gradient(45deg, #fff, #ffe);
+}
+.best-round-fan {
+    font-size: 18px;
+    color: gold;
+    font-weight: bold;
+}
+.restart-btn {
+    padding: 12px 30px;
+    font-size: 18px;
+    background: #c9a24d;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+.restart-btn:hover {
+    background: #d4b366;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="left-panel">
+        <div class="info-bar">
+            <span>第 <span id="round">1</span>/10 轮</span>
+            <span>门风:<span id="menFeng">东</span> 圈风:<span id="quanFeng">东</span></span>
+            <span>总分: <span id="score">0</span></span>
+        </div>
+        <div class="hand-area" id="hand"></div>
+        <div class="controls">
+            <button id="smartBtn" onclick="smartSelect()">智能选牌</button>
+            <button id="confirmBtn" onclick="confirmSelection()" disabled>确认(0/4)</button>
+            <button id="playBtn" onclick="playRound()" disabled>打出</button>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div>番型列表</div>
+        <div class="fan-list" id="fanPreview">
+            <p>选择4张牌...</p>
+        </div>
+        <div class="score-display">
+            本轮得分: <span id="previewScore">0</span> 番
+        </div>
+    </div>
+</div>
+
+<!-- 动画界面 -->
+<div class="animation-overlay" id="animationOverlay">
+    <div class="animation-content">
+        <div class="animation-tiles" id="animationTiles"></div>
+        <div class="animation-text" id="animationText"></div>
+    </div>
+</div>
+
+<!-- 成绩图界面 -->
+<div class="result-overlay" id="resultOverlay">
+    <div class="result-content">
+        <div class="result-title">游戏结束</div>
+        <div class="result-score" id="finalScore">0 分</div>
+        <div class="best-rounds">
+            <h3 style="color: gold; margin-bottom: 15px;">最佳出牌</h3>
+            <div id="bestRoundsList"></div>
+        </div>
+        <button class="restart-btn" onclick="restartGame()">重开</button>
+    </div>
+</div>
+
+<script>
+// ======================================================
+// 配置区 - 番型规则（已注入）
+// ======================================================
+
+// 牌库定义（34种，每种1张）
+const TILES = [
+    ...Array.from({length: 9}, (_, i) => ({id: `m${i+1}`, name: `${i+1}万`, type: '万', value: i+1})),
+    ...Array.from({length: 9}, (_, i) => ({id: `s${i+1}`, name: `${i+1}条`, type: '条', value: i+1})),
+    ...Array.from({length: 9}, (_, i) => ({id: `p${i+1}`, name: `${i+1}筒`, type: '筒', value: i+1})),
+    {id: 'z1', name: '东', type: '风', value: 11},
+    {id: 'z2', name: '南', type: '风', value: 12},
+    {id: 'z3', name: '西', type: '风', value: 13},
+    {id: 'z4', name: '北', type: '风', value: 14},
+    {id: 'z5', name: '中', type: '箭', value: 15},
+    {id: 'z6', name: '发', type: '箭', value: 16},
+    {id: 'z7', name: '白', type: '箭', value: 17}
+];
+
+// 游戏状态
+let deck = [];
+let hand = [];
+let selectedIndices = [];
+let round = 1;
+let totalScore = 0;
+let roundHistory = [];
+
+// 新增：门风和圈风
+let menFeng = '东';
+let quanFeng = '东';
+
+// 番型规则
+const FAN_RULES = [
+    // ===== 原有番型 =====
+    {
+        name: "大四喜",
+        check: (selectedTiles) => {
+            const winds = selectedTiles.filter(t => t.type === '风');
+            return winds.length === 4 && new Set(winds.map(t => t.name)).size === 4;
+        },
+        fan: 88,
+        hasAnimation: true,
+        textColor: "#ff4444",
+        glowColor: "#ff0000",
+        bgColor: "#330000"
+    },
+    {
+        name: "大三元",
+        check: (selectedTiles) => {
+            const arrows = selectedTiles.filter(t => t.type === '箭');
+            return arrows.length === 3 && new Set(arrows.map(t => t.name)).size === 3;
+        },
+        fan: 64,
+        hasAnimation: true,
+        textColor: "#aa44ff",
+        glowColor: "#6600ff",
+        bgColor: "#110033"
+    },
+    {
+        name: "红孔雀",
+        check: (selectedTiles) => {
+            const allowed = ['1条','5条','7条','9条','中'];
+            return selectedTiles.every(t => allowed.includes(t.name));
+        },
+        fan: 32,
+        hasAnimation: true,
+        textColor: "#ff8888",
+        glowColor: "#ff4444",
+        bgColor: "#331111"
+    },
+    {
+        name: "四连刻",
+        check: (selectedTiles) => {
+            const numberTiles = selectedTiles.filter(t => t.type === '万' || t.type === '条' || t.type === '筒');
+            if (numberTiles.length < 4) return false;
+            const types = numberTiles.map(t => t.type);
+            if (!types.every(t => t === types[0])) return false;
+            const values = numberTiles.map(t => t.value).sort((a,b)=>a-b);
+            for (let i=0; i<=values.length-4; i++) {
+                if (values[i+3]-values[i]===3) return true;
+            }
+            return false;
+        },
+        fan: 40,
+        hasAnimation: true,
+        textColor: "#8B4513",
+        glowColor: "#654321",
+        bgColor: "#221100"
+    },
+    {
+        name: "清幺九",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            return selectedTiles.every(t => t.value === 1 || t.value === 9);
+        },
+        fan: 48,
+        hasAnimation: true,
+        textColor: "#90EE90",
+        glowColor: "#32CD32",
+        bgColor: "#003300"
+    },
+    {
+        name: "小四喜",
+        check: (selectedTiles) => {
+            const winds = selectedTiles.filter(t => t.type === '风');
+            return winds.length === 3 && new Set(winds.map(t => t.name)).size === 3;
+        },
+        fan: 32,
+        hasAnimation: true,
+        textColor: "#ff4444",
+        glowColor: "#ff0000",
+        bgColor: "#330000"
+    },
+    {
+        name: "百万石",
+        check: (selectedTiles) => {
+            const types = selectedTiles.map(t => t.type);
+            if (!types.every(t => t === '万')) return false;
+            const sum = selectedTiles.reduce((s, t) => s + t.value, 0);
+            return sum >= 28;
+        },
+        fan: 28,
+        hasAnimation: true,
+        textColor: "#ffffff",
+        glowColor: "#cccccc",
+        bgColor: "#222222"
+    },
+    {
+        name: "绿一色",
+        check: (selectedTiles) => {
+            const allowed = ['2条','3条','4条','6条','8条','发'];
+            return selectedTiles.every(t => allowed.includes(t.name));
+        },
+        fan: 36,
+        hasAnimation: true,
+        textColor: "#00ff00",
+        glowColor: "#00aa00",
+        bgColor: "#002200"
+    },
+    {
+        name: "纯正九五至尊",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const values = selectedTiles.map(t => t.value);
+            return values.every(v => v === 5 || v === 9);
+        },
+        fan: 30,
+        hasAnimation: true,
+        textColor: "#FFD700",
+        glowColor: "#FFA500",
+        bgColor: "#332200"
+    },
+    {
+        name: "字一色",
+        check: (selectedTiles) => {
+            return selectedTiles.every(t => t.type === '风' || t.type === '箭');
+        },
+        fan: 24,
+        hasAnimation: true,
+        textColor: "#00008B",
+        glowColor: "#0000FF",
+        bgColor: "#000011"
+    },
+    {
+        name: "黑一色",
+        check: (selectedTiles) => {
+            const allowed = ['2筒','4筒','8筒','东','南','西','北'];
+            return selectedTiles.every(t => allowed.includes(t.name));
+        },
+        fan: 24,
+        hasAnimation: true,
+        textColor: "#000000",
+        glowColor: "#333333",
+        bgColor: "#111111"
+    },
+    {
+        name: "中原一点红",
+        check: (selectedTiles) => {
+            const allowed = ['1筒','3筒','5筒','6筒','7筒','9筒','中'];
+            return selectedTiles.every(t => allowed.includes(t.name));
+        },
+        fan: 24,
+        hasAnimation: true,
+        textColor: "#FF4500",
+        glowColor: "#FF0000",
+        bgColor: "#330000"
+    },
+    {
+        name: "纯正十全十美",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const types = selectedTiles.map(t => t.type);
+            if (!types.every(t => t === types[0])) return false;
+            const tilesByType = {};
+            selectedTiles.forEach(tile => {
+                if (!tilesByType[tile.type]) tilesByType[tile.type] = [];
+                tilesByType[tile.type].push(tile.value);
+            });
+            for (const type in tilesByType) {
+                const values = tilesByType[type];
+                if (values.length !== 4) return false;
+                const paired = new Set();
+                for (let i = 0; i < values.length; i++) {
+                    for (let j = i+1; j < values.length; j++) {
+                        if (values[i] + values[j] === 10) {
+                            paired.add(i);
+                            paired.add(j);
+                        }
+                    }
+                }
+                return paired.size === 4;
+            }
+            return false;
+        },
+        fan: 32,
+        hasAnimation: true,
+        textColor: "#FF69B4",
+        glowColor: "#FF1493",
+        bgColor: "#330022"
+    },
+    {
+        name: "十全十美",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const types = selectedTiles.map(t => t.type);
+            if (new Set(types).size < 2) return false;
+            const tilesByType = {};
+            selectedTiles.forEach(tile => {
+                if (!tilesByType[tile.type]) tilesByType[tile.type] = [];
+                tilesByType[tile.type].push(tile.value);
+            });
+            for (const type in tilesByType) {
+                const values = tilesByType[type];
+                if (values.length !== 2) return false;
+                if (values[0] + values[1] !== 10) return false;
+            }
+            return true;
+        },
+        fan: 10,
+        hasAnimation: false
+    },
+    {
+        name: "清一色",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const types = selectedTiles.map(t => t.type);
+            return types.every(t => t === types[0]);
+        },
+        fan: 12,
+        hasAnimation: false
+    },
+    {
+        name: "三同刻",
+        check: (selectedTiles) => {
+            const values = selectedTiles.map(t => t.value);
+            const counts = {};
+            values.forEach(v => counts[v] = (counts[v]||0)+1);
+            return Object.values(counts).some(c => c >= 3);
+        },
+        fan: 16,
+        hasAnimation: true,
+        textColor: "#FFFFE0",
+        glowColor: "#FFFF00",
+        bgColor: "#333300"
+    },
+    {
+        name: "小三元",
+        check: (selectedTiles) => {
+            const arrows = selectedTiles.filter(t => t.type === '箭');
+            return arrows.length === 2 && new Set(arrows.map(t => t.name)).size === 2;
+        },
+        fan: 16,
+        hasAnimation: true,
+        textColor: "#DDA0DD",
+        glowColor: "#DA70D6",
+        bgColor: "#220022"
+    },
+    {
+        name: "三生万物",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const values = selectedTiles.map(t => t.value);
+            return values.every(v => v === 3 || v === 6 || v === 9);
+        },
+        fan: 12,
+        hasAnimation: false
+    },
+    {
+        name: "将将胡",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const values = selectedTiles.map(t => t.value);
+            return values.every(v => v === 2 || v === 5 || v === 8);
+        },
+        fan: 12,
+        hasAnimation: false
+    },
+    {
+        name: "满分斯诺克",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const values = selectedTiles.map(t => t.value);
+            return values.every(v => v === 1 || v === 4 || v === 7);
+        },
+        fan: 12,
+        hasAnimation: false
+    },
+    {
+        name: "西南翠竹海",
+        check: (selectedTiles) => {
+            const hasWest = selectedTiles.some(t => t.name === '西');
+            const hasSouth = selectedTiles.some(t => t.name === '南');
+            const others = selectedTiles.filter(t => t.name !== '西' && t.name !== '南');
+            if (!hasWest || !hasSouth) return false;
+            const allowed = ['2条','3条','4条','6条','8条'];
+            return others.every(t => allowed.includes(t.name));
+        },
+        fan: 18,
+        hasAnimation: true,
+        textColor: "#90EE90",
+        glowColor: "#32CD32",
+        bgColor: "#003300"
+    },
+    {
+        name: "西北万重山",
+        check: (selectedTiles) => {
+            const hasWest = selectedTiles.some(t => t.name === '西');
+            const hasNorth = selectedTiles.some(t => t.name === '北');
+            const hasNineMan = selectedTiles.some(t => t.name === '9万');
+            const others = selectedTiles.filter(t => t.name !== '西' && t.name !== '北' && t.name !== '9万');
+            if (!hasWest || !hasNorth || !hasNineMan) return false;
+            const values = others.map(t => t.value);
+            return others.length === 1 && (values[0] === 1 || values[0] === 9);
+        },
+        fan: 18,
+        hasAnimation: true,
+        textColor: "#808080",
+        glowColor: "#696969",
+        bgColor: "#111111"
+    },
+    {
+        name: "三连刻",
+        check: (selectedTiles) => {
+            const numberTiles = selectedTiles.filter(t => t.type === '万' || t.type === '条' || t.type === '筒');
+            if (numberTiles.length < 3) return false;
+            const types = numberTiles.map(t => t.type);
+            const groupedByType = {};
+            numberTiles.forEach(tile => {
+                if (!groupedByType[tile.type]) groupedByType[tile.type] = [];
+                groupedByType[tile.type].push(tile.value);
+            });
+            for (const type in groupedByType) {
+                const values = groupedByType[type].sort((a,b)=>a-b);
+                for (let i=0; i<=values.length-3; i++) {
+                    if (values[i+2] - values[i] === 2) return true;
+                }
+            }
+            return false;
+        },
+        fan: 15,
+        hasAnimation: false
+    },
+    {
+        name: "财源滚滚",
+        check: (selectedTiles) => {
+            const hasFa = selectedTiles.some(t => t.name === '发');
+            const hasOneNineTong = selectedTiles.some(t => t.name === '1筒' || t.name === '9筒');
+            const others = selectedTiles.filter(t => t.name !== '发' && t.name !== '1筒' && t.name !== '9筒');
+            if (!hasFa || !hasOneNineTong) return false;
+            const values = others.map(t => t.value);
+            return others.length === 1 && (values[0] === 1 || values[0] === 9);
+        },
+        fan: 20,
+        hasAnimation: true,
+        textColor: "#FFD700",
+        glowColor: "#FFA500",
+        bgColor: "#332200"
+    },
+    {
+        name: "孔雀东南飞",
+        check: (selectedTiles) => {
+            const hasEast = selectedTiles.some(t => t.name === '东');
+            const hasSouth = selectedTiles.some(t => t.name === '南');
+            const hasOneTiao = selectedTiles.some(t => t.name === '1条');
+            const others = selectedTiles.filter(t => t.name !== '东' && t.name !== '南' && t.name !== '1条');
+            if (!hasEast || !hasSouth || !hasOneTiao) return false;
+            const values = others.map(t => t.value);
+            return others.length === 1 && (values[0] === 1 || values[0] === 9);
+        },
+        fan: 18,
+        hasAnimation: true,
+        textColor: "#4169E1",
+        glowColor: "#0000FF",
+        bgColor: "#000022"
+    },
+    {
+        name: "东北黑水寒",
+        check: (selectedTiles) => {
+            const hasEast = selectedTiles.some(t => t.name === '东');
+            const hasNorth = selectedTiles.some(t => t.name === '北');
+            const others = selectedTiles.filter(t => t.name !== '东' && t.name !== '北');
+            if (!hasEast || !hasNorth) return false;
+            if (others.length !== 2) return false;
+            const allowed1 = ['2筒','4筒','8筒'];
+            const allowed2 = ['2筒','4筒','8筒','2条','3条','4条','6条','8条'];
+            return (allowed1.includes(others[0].name) && allowed2.includes(others[1].name)) ||
+                   (allowed1.includes(others[1].name) && allowed2.includes(others[0].name));
+        },
+        fan: 18,
+        hasAnimation: true,
+        textColor: "#00008B",
+        glowColor: "#0000FF",
+        bgColor: "#000011"
+    },
+    {
+        name: "九五至尊",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length < 1 || honors.length > 2) return false;
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            const values = numbers.map(t => t.value);
+            const hasFive = values.includes(5);
+            const hasNine = values.includes(9);
+            if (!hasFive || !hasNine) return false;
+            return new Set(values).size > 1;
+        },
+        fan: 9,
+        hasAnimation: false
+    },
+    {
+        name: "全大",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const values = selectedTiles.map(t => t.value);
+            return values.every(v => v >= 7);
+        },
+        fan: 12,
+        hasAnimation: false
+    },
+    {
+        name: "全中",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const values = selectedTiles.map(t => t.value);
+            return values.every(v => v >= 4 && v <= 6);
+        },
+        fan: 12,
+        hasAnimation: false
+    },
+    {
+        name: "全小",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const values = selectedTiles.map(t => t.value);
+            return values.every(v => v <= 3);
+        },
+        fan: 12,
+        hasAnimation: false
+    },
+    {
+        name: "清断红胡",
+        check: (selectedTiles) => {
+            const allowed = ['2条','3条','4条','6条','8条','2筒','4筒','8筒'];
+            return selectedTiles.every(t => allowed.includes(t.name));
+        },
+        fan: 15,
+        hasAnimation: false
+    },
+    {
+        name: "全双",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const values = selectedTiles.map(t => t.value);
+            return values.every(v => v % 2 === 0);
+        },
+        fan: 10,
+        hasAnimation: false
+    },
+    {
+        name: "双双同刻",
+        check: (selectedTiles) => {
+            const values = selectedTiles.map(t => t.value);
+            const counts = {};
+            values.forEach(v => counts[v] = (counts[v]||0)+1);
+            return Object.values(counts).filter(c => c >= 2).length >= 2;
+        },
+        fan: 10,
+        hasAnimation: false
+    },
+    {
+        name: "混幺九",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length < 1 || honors.length > 3) return false;
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            const values = numbers.map(t => t.value);
+            return values.every(v => v === 1 || v === 9);
+        },
+        fan: 8,
+        hasAnimation: false
+    },
+    {
+        name: "全单",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const values = selectedTiles.map(t => t.value);
+            return values.every(v => v % 2 === 1);
+        },
+        fan: 8,
+        hasAnimation: false
+    },
+    {
+        name: "混一色",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length < 1 || honors.length > 3) return false;
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            const types = numbers.map(t => t.type);
+            return types.every(t => t === types[0]);
+        },
+        fan: 8,
+        hasAnimation: false
+    },
+    {
+        name: "小三风",
+        check: (selectedTiles) => {
+            const winds = selectedTiles.filter(t => t.type === '风');
+            return winds.length === 2 && new Set(winds.map(t => t.name)).size === 2;
+        },
+        fan: 8,
+        hasAnimation: false
+    },
+    {
+        name: "丹青流彩",
+        check: (selectedTiles) => {
+            const allowed = ['1条','5条','7条','9条','1筒','3筒','5筒','6筒','7筒','9筒'];
+            return selectedTiles.every(t => allowed.includes(t.name));
+        },
+        fan: 8,
+        hasAnimation: false
+    },
+    {
+        name: "混将胡",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length < 1 || honors.length > 3) return false;
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            const values = numbers.map(t => t.value);
+            return values.every(v => v === 2 || v === 5 || v === 8);
+        },
+        fan: 6,
+        hasAnimation: false
+    },
+    {
+        name: "推不倒",
+        check: (selectedTiles) => {
+            const allowed = ['2条','4条','5条','6条','8条','9条','1筒','2筒','3筒','4筒','5筒','8筒','白'];
+            return selectedTiles.every(t => allowed.includes(t.name));
+        },
+        fan: 6,
+        hasAnimation: false
+    },
+    {
+        name: "五门齐",
+        check: (selectedTiles) => {
+            const types = selectedTiles.map(t => t.type);
+            const hasWan = types.includes('万');
+            const hasTiao = types.includes('条');
+            const hasTong = types.includes('筒');
+            const hasFeng = types.includes('风');
+            const hasJian = types.includes('箭');
+            const count = [hasWan, hasTiao, hasTong, hasFeng, hasJian].filter(Boolean).length;
+            return count >= 4;
+        },
+        fan: 5,
+        hasAnimation: false
+    },
+    {
+        name: "双同刻",
+        check: (selectedTiles) => {
+            const values = selectedTiles.map(t => t.value);
+            const counts = {};
+            values.forEach(v => counts[v] = (counts[v]||0)+1);
+            return Object.values(counts).some(c => c >= 2);
+        },
+        fan: 4,
+        hasAnimation: false
+    },
+    {
+        name: "混大",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length < 1 || honors.length > 3) return false;
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            const values = numbers.map(t => t.value);
+            return values.every(v => v >= 7);
+        },
+        fan: 4,
+        hasAnimation: false
+    },
+    {
+        name: "混中",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length < 1 || honors.length > 3) return false;
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            const values = numbers.map(t => t.value);
+            return values.every(v => v >= 4 && v <= 6);
+        },
+        fan: 4,
+        hasAnimation: false
+    },
+    {
+        name: "混小",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length < 1 || honors.length > 3) return false;
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            const values = numbers.map(t => t.value);
+            return values.every(v => v <= 3);
+        },
+        fan: 4,
+        hasAnimation: false
+    },
+    {
+        name: "断红胡",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length < 1 || honors.length > 3) return false;
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            const allowed = ['2筒','4筒','8筒','2条','3条','4条','6条','8条'];
+            return numbers.every(t => allowed.includes(t.name));
+        },
+        fan: 3,
+        hasAnimation: false
+    },
+    {
+        name: "箭刻",
+        check: (selectedTiles) => {
+            const arrows = selectedTiles.filter(t => t.type === '箭');
+            return arrows.length === 1;
+        },
+        fan: 2,
+        hasAnimation: false
+    },
+    {
+        name: "碰碰胡",
+        check: () => true,
+        fan: 1,
+        hasAnimation: false
+    },
+    {
+        name: "断幺九",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const values = selectedTiles.map(t => t.value);
+            return values.every(v => v >= 2 && v <= 8);
+        },
+        fan: 6,
+        hasAnimation: false
+    },
+
+    // ===== 新增番型 =====
+    {
+        name: "门风刻",
+        check: (selectedTiles) => {
+            const feng = selectedTiles.filter(t => t.type === '风');
+            if (feng.length !== 1) return false;
+            return feng[0].name === menFeng && feng[0].name !== quanFeng;
+        },
+        fan: 3,
+        hasAnimation: false
+    },
+    {
+        name: "圈风刻",
+        check: (selectedTiles) => {
+            const feng = selectedTiles.filter(t => t.type === '风');
+            if (feng.length !== 1) return false;
+            return feng[0].name === quanFeng && feng[0].name !== menFeng;
+        },
+        fan: 3,
+        hasAnimation: false
+    },
+    {
+        name: "门圈风刻",
+        check: (selectedTiles) => {
+            const feng = selectedTiles.filter(t => t.type === '风');
+            if (feng.length !== 2) return false;
+            const names = feng.map(t => t.name);
+            return names.includes(menFeng) && names.includes(quanFeng) && menFeng !== quanFeng;
+        },
+        fan: 9,
+        hasAnimation: false
+    },
+    {
+        name: "门圈同刻",
+        check: (selectedTiles) => {
+            const feng = selectedTiles.filter(t => t.type === '风');
+            if (feng.length !== 2) return false;
+            const names = feng.map(t => t.name);
+            return names.includes(menFeng) && names.includes(quanFeng) && menFeng === quanFeng;
+        },
+        fan: 15,
+        hasAnimation: true,
+        textColor: "#FFD700",
+        glowColor: "#FFA500",
+        bgColor: "#332200"
+    },
+    {
+        name: "轮刻",
+        check: (selectedTiles) => {
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            const values = numbers.map(t => t.value);
+            return values.filter(v => v === round).length;
+        },
+        fan: 0, // 动态计算
+        hasAnimation: false
+    },
+    {
+        name: "三节高",
+        check: (selectedTiles) => {
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            if (numbers.length < 3) return false;
+            const types = numbers.map(t => t.type);
+            if (new Set(types).size !== 3) return false;
+            const values = numbers.map(t => t.value).sort((a,b)=>a-b);
+            return values[2] - values[1] === 1 && values[1] - values[0] === 1;
+        },
+        fan: 6,
+        hasAnimation: false
+    },
+    {
+        name: "全不靠",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length !== 1) return false;
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            if (numbers.length !== 3) return false;
+            const types = numbers.map(t => t.type);
+            if (new Set(types).size !== 3) return false;
+            const values = numbers.map(t => t.value);
+            const is147 = values.every(v => [1,4,7].includes(v));
+            const is258 = values.every(v => [2,5,8].includes(v));
+            const is369 = values.every(v => [3,6,9].includes(v));
+            return is147 || is258 || is369;
+        },
+        fan: 8,
+        hasAnimation: false
+    },
+    {
+        name: "大于五",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const values = selectedTiles.map(t => t.value);
+            return values.every(v => v >= 6 && v <= 9) && values.includes(6);
+        },
+        fan: 6,
+        hasAnimation: false
+    },
+    {
+        name: "小于五",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const values = selectedTiles.map(t => t.value);
+            return values.every(v => v >= 1 && v <= 4) && values.includes(4);
+        },
+        fan: 6,
+        hasAnimation: false
+    },
+    {
+        name: "三色双龙会",
+        check: (selectedTiles) => {
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            if (numbers.length !== 4) return false;
+            const groups = {};
+            numbers.forEach(t => {
+                if (!groups[t.type]) groups[t.type] = [];
+                groups[t.type].push(t.value);
+            });
+            const types = Object.keys(groups);
+            if (types.length !== 3) return false;
+            const values = Object.values(groups).flat();
+            const has19 = values.includes(1) && values.includes(9);
+            const has55 = values.filter(v => v === 5).length === 2;
+            return has19 && has55;
+        },
+        fan: 22,
+        hasAnimation: true,
+        textColor: "#FFA500",
+        glowColor: "#FF4500",
+        bgColor: "#221100"
+    },{
+        name: "混双",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length < 1 || honors.length > 3) return false;
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            const values = numbers.map(t => t.value);
+            return values.every(v => v % 2 === 0);
+        },
+        fan: 4,
+        hasAnimation: false
+    },
+    {
+        name: "混单",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length < 1 || honors.length > 3) return false;
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            const values = numbers.map(t => t.value);
+            return values.every(v => v % 2 === 1);
+        },
+        fan: 3,
+        hasAnimation: false
+    },
+    {
+        name: "质胡",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const values = selectedTiles.map(t => t.value);
+            return values.every(v => [2,3,5,7].includes(v));
+        },
+        fan: 6,
+        hasAnimation: false
+    },
+    {
+        name: "合胡",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const values = selectedTiles.map(t => t.value);
+            return values.every(v => [4,6,8,9].includes(v));
+        },
+        fan: 6,
+        hasAnimation: false
+    },
+    {
+        name: "带红胡",
+        check: (selectedTiles) => {
+            const forbidden = ['2条','3条','4条','6条','8条','4筒','8筒','东','南','西','北','发','白'];
+            return !selectedTiles.some(t => forbidden.includes(t.name));
+        },
+        fan: 2,
+        hasAnimation: false
+    }
+
+];
+
+// 初始化
+function init() {
+    // 随机门风
+    const fengs = ['东','南','西','北'];
+    menFeng = fengs[Math.floor(Math.random() * 4)];
+    // 随机圈风
+    quanFeng = fengs[Math.floor(Math.random() * 4)];
+    
+    resetDeck();
+    updateDisplay();
+    dealFirstRound();
+}
+// 智能选牌：遍历所有4张牌组合，选择番数最高的
+function smartSelect() {
+    // 获取非空手牌
+    const validCards = hand
+        .map((tile, index) => ({ tile, index }))
+        .filter(item => item.tile !== null);
+    
+    if (validCards.length < 4) return;
+    
+    let bestCombo = [];
+    let bestScore = -1;
+    
+    // 遍历所有4张牌组合 C(8,4)=70
+    for (let i = 0; i < validCards.length; i++) {
+        for (let j = i + 1; j < validCards.length; j++) {
+            for (let k = j + 1; k < validCards.length; k++) {
+                for (let l = k + 1; l < validCards.length; l++) {
+                    const combo = [validCards[i], validCards[j], validCards[k], validCards[l]];
+                    const indices = combo.map(item => item.index);
+                    
+                    // 临时设置选中
+                    const originalSelected = selectedIndices;
+                    selectedIndices = indices;
+                    
+                    // 计算番数
+                    const score = calculateAllFans();
+                    
+                    // 恢复
+                    selectedIndices = originalSelected;
+                    
+                    // 比较（现在是平方得分）
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestCombo = indices;
+                    }
+                }
+            }
+        }
+    }
+    
+    // 应用最佳组合
+    selectedIndices = bestCombo;
+    updateSelectionVisual();
+    updateButtons();
+    calculateAllFans();
+}
+
+
+// 重置牌堆
+function resetDeck() {
+    deck = [...TILES].sort(() => Math.random() - 0.5);
+}
+
+// 第一轮发8张牌
+function dealFirstRound() {
+    if (deck.length < 8) {
+        resetDeck();
+    }
+    
+    const newCards = deck.splice(-8);
+    hand = newCards.map(card => card);
+    
+    selectedIndices = [];
+    
+    renderHand();
+    updateButtons();
+    clearPreview();
+}
+
+// 后续轮次发4张牌填补空位
+function dealNextRound() {
+    const emptySlots = hand.filter(card => card === null).length;
+    
+    if (deck.length < emptySlots) {
+        resetDeck();
+    }
+    
+    const newCards = deck.splice(-emptySlots);
+    
+    let cardIndex = 0;
+    for (let i = 0; i < hand.length; i++) {
+        if (hand[i] === null) {
+            hand[i] = newCards[cardIndex++];
+        }
+    }
+    
+    selectedIndices = [];
+    
+    renderHand();
+    updateButtons();
+    clearPreview();
+}
+
+// 渲染手牌
+function renderHand() {
+    const area = document.getElementById('hand');
+    area.innerHTML = '';
+    
+    hand.forEach((tile, index) => {
+        const slot = document.createElement('div');
+        slot.className = 'slot';
+        
+        if (tile === null) {
+            slot.className += ' empty';
+            slot.innerHTML = '<div class="tile-wrapper"><div class="tile" style="opacity:0.3;">?</div></div>';
+        } else {
+            slot.onclick = () => toggleSelect(index);
+            
+            let tilesHtml = '<div class="tile-wrapper">';
+            for (let i = 0; i < 3; i++) {
+                tilesHtml += `<div class="tile ${['东','南','西','北','中','发','白'].includes(tile.name) ? 'red' : ''}">${tile.name}</div>`;
+            }
+            tilesHtml += '</div>';
+            
+            slot.innerHTML = tilesHtml;
+        }
+        
+        area.appendChild(slot);
+    });
+    
+    updateSelectionVisual();
+}
+
+// 切换选择
+function toggleSelect(index) {
+    const tile = hand[index];
+    if (tile === null) return;
+    
+    const selectedIndex = selectedIndices.indexOf(index);
+    
+    if (selectedIndex !== -1) {
+        selectedIndices.splice(selectedIndex, 1);
+    } else {
+        if (selectedIndices.length < 4) {
+            selectedIndices.push(index);
+        }
+    }
+    
+    updateSelectionVisual();
+    updateButtons();
+    calculateAllFans();
+}
+
+// 更新选择视觉效果
+function updateSelectionVisual() {
+    document.querySelectorAll('.slot').forEach((slot, index) => {
+        slot.classList.toggle('selected', selectedIndices.includes(index));
+    });
+}
+
+// 更新按钮状态
+function updateButtons() {
+    const count = selectedIndices.length;
+    document.getElementById('confirmBtn').innerText = `确认(${count}/4)`;
+    document.getElementById('confirmBtn').disabled = count !== 4;
+    document.getElementById('playBtn').disabled = count !== 4;
+}
+
+// 计算所有番型并返回总番数
+function calculateAllFans() {
+    if (selectedIndices.length !== 4) return 0;
+    
+    const selectedTiles = selectedIndices.map(i => hand[i]);
+    
+    let allFans = [];
+    let totalFan = 0;
+    let maxFan = 0;
+    let bestRule = null;
+    
+    FAN_RULES.forEach(rule => {
+        const result = rule.check(selectedTiles);
+        if (result) {
+            let fanValue = rule.fan;
+            // 轮刻特殊处理
+            if (rule.name === "轮刻") {
+                const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+                const count = numbers.filter(t => t.value === round).length;
+                fanValue = count * round;
+            }
+            
+            allFans.push({
+                name: rule.name,
+                fan: fanValue,
+                rule: rule
+            });
+            totalFan += fanValue;
+            
+            if (fanValue > maxFan) {
+                maxFan = fanValue;
+                bestRule = rule;
+            }
+        }
+    });
+    
+    if (allFans.length === 0) {
+        const baseRule = FAN_RULES.find(r => r.name === "碰碰胡");
+        allFans.push({
+            name: baseRule.name,
+            fan: baseRule.fan,
+            rule: baseRule
+        });
+        totalFan = baseRule.fan;
+        maxFan = baseRule.fan;
+        bestRule = baseRule;
+    }
+    
+    window.currentBestRule = bestRule;
+    window.currentSelectedTiles = selectedTiles;
+    
+    renderAllFans(allFans, totalFan);
+    return totalFan;
+}
+
+// 渲染所有番型
+function renderAllFans(allFans, totalFan) {
+    const container = document.getElementById('fanPreview');
+    
+    allFans.sort((a, b) => b.fan - a.fan);
+    
+    container.innerHTML = allFans.map(item => `
+        <div class="fan-item">
+            <span>${item.name}</span>
+            <span>${item.fan}番</span>
+        </div>
+    `).join('');
+    
+    document.getElementById('previewScore').innerText = totalFan;
+}
+
+// 清除预览
+function clearPreview() {
+    document.getElementById('fanPreview').innerHTML = '<p>选择4张牌...</p>';
+    document.getElementById('previewScore').innerText = '0';
+}
+
+// 确认选择
+function confirmSelection() {
+    if (selectedIndices.length === 4) {
+        document.getElementById('playBtn').disabled = false;
+    }
+}
+
+// 打出牌
+function playRound() {
+    if (selectedIndices.length !== 4) return;
+    
+    const selectedTiles = selectedIndices.map(i => hand[i]);
+    
+    let allFans = [];
+    let totalFan = 0;
+    let maxFan = 0;
+    let bestRule = null;
+    
+    FAN_RULES.forEach(rule => {
+        const result = rule.check(selectedTiles);
+        if (result) {
+            let fanValue = rule.fan;
+            if (rule.name === "轮刻") {
+                const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+                const count = numbers.filter(t => t.value === round).length;
+                fanValue = count * round;
+            }
+            allFans.push(fanValue);
+            totalFan += fanValue;
+            if (fanValue > maxFan) {
+                maxFan = fanValue;
+                bestRule = rule;
+            }
+        }
+    });
+    
+    if (totalFan === 0) {
+        const baseRule = FAN_RULES.find(r => r.name === "碰碰胡");
+        totalFan = baseRule.fan;
+        maxFan = baseRule.fan;
+        bestRule = baseRule;
+    }
+    
+    roundHistory.push({
+        round: round,
+        tiles: selectedTiles.map(t => t.name),
+        fan: totalFan,
+        ruleName: bestRule.name
+    });
+    
+    totalScore += totalFan*totalFan;
+    document.getElementById('score').innerText = totalScore;
+    
+    const playedCards = selectedIndices.map(i => hand[i]);
+    deck.push(...playedCards);
+    
+    selectedIndices.forEach(i => {
+        hand[i] = null;
+    });
+    
+    if (bestRule && bestRule.hasAnimation) {
+        showAnimation(bestRule, selectedTiles);
+    } else {
+        nextRound();
+    }
+}
+
+// 显示动画
+function showAnimation(rule, selectedTiles) {
+    const overlay = document.getElementById('animationOverlay');
+    const tilesContainer = document.getElementById('animationTiles');
+    const textElement = document.getElementById('animationText');
+    
+    overlay.style.background = rule.bgColor || '#000';
+    
+    let tilesHtml = '';
+    
+    selectedTiles.forEach(tile => {
+        for (let i = 0; i < 3; i++) {
+            tilesHtml += `<div class="animation-tile">${tile.name}</div>`;
+        }
+    });
+    
+    for (let i = 0; i < 2; i++) {
+        tilesHtml += `<div class="animation-tile joker">赖</div>`;
+    }
+    
+    tilesContainer.innerHTML = tilesHtml;
+    
+    textElement.innerText = rule.name;
+    textElement.style.color = rule.textColor;
+    textElement.style.textShadow = `0 0 15px ${rule.glowColor}`;
+    
+    overlay.style.display = 'flex';
+    
+    setTimeout(() => {
+        overlay.style.display = 'none';
+        nextRound();
+    }, 2000);
+}
+
+// 下一轮
+function nextRound() {
+    round++;
+    if (round > 10) {
+        showResult();
+        return;
+    }
+    
+    // 更新圈风
+    const quanOrder = ['东','南','西','北'];
+    const idx = quanOrder.indexOf(quanFeng);
+    quanFeng = quanOrder[(idx + 1) % 4];
+    
+    document.getElementById('round').innerText = round;
+    document.getElementById('quanFeng').innerText = quanFeng;
+    
+    deck.sort(() => Math.random() - 0.5);
+    
+    dealNextRound();
+}
+
+// 显示成绩图
+function showResult() {
+    const overlay = document.getElementById('resultOverlay');
+    const finalScoreEl = document.getElementById('finalScore');
+    const bestRoundsListEl = document.getElementById('bestRoundsList');
+    
+    finalScoreEl.innerText = `${totalScore} 分`;
+    
+    const sortedRounds = [...roundHistory].sort((a, b) => b.fan - a.fan);
+    const top3 = sortedRounds.slice(0, 3);
+    
+    bestRoundsListEl.innerHTML = top3.map((roundData, index) => {
+        let tilesHtml = '';
+        roundData.tiles.forEach(tileName => {
+            for (let i = 0; i < 3; i++) {
+                tilesHtml += `<div class="best-round-tile">${tileName}</div>`;
+            }
+        });
+        for (let i = 0; i < 2; i++) {
+            tilesHtml += `<div class="best-round-tile joker">赖</div>`;
+        }
+        
+        return `
+            <div class="best-round-item">
+                <div class="best-round-tiles">${tilesHtml}</div>
+                <div class="best-round-fan">${roundData.fan}番 (${roundData.ruleName})</div>
+            </div>
+        `;
+    }).join('');
+    
+    if (top3.length === 0) {
+        bestRoundsListEl.innerHTML = '<p style="color: #aaa;">暂无出牌记录</p>';
+    }
+    
+    overlay.style.display = 'flex';
+}
+
+// 重开游戏
+function restartGame() {
+    const overlay = document.getElementById('resultOverlay');
+    overlay.style.display = 'none';
+    
+    round = 1;
+    totalScore = 0;
+    roundHistory = [];
+    
+    init();
+}
+
+// 更新显示
+function updateDisplay() {
+    document.getElementById('round').innerText = round;
+    document.getElementById('score').innerText = totalScore;
+    document.getElementById('menFeng').innerText = menFeng;
+    document.getElementById('quanFeng').innerText = quanFeng;
+}
+
+// 启动游戏
+init();
+</script>
+</body>
+</html>
