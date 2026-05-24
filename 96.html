@@ -1154,7 +1154,197 @@ const FAN_RULES = [
         },
         fan: 2,
         hasAnimation: false
+    },
+    {
+        name: "无字",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            return honors.length === 0;
+        },
+        fan: 2,
+        hasAnimation: false
+    },
+    {
+        name: "和胡",
+        check: (selectedTiles) => {
+            // 找出所有数字牌
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            if (numbers.length < 3) return false;
+            
+            // 检查任意3张牌是否满足条件
+            for (let i = 0; i < numbers.length; i++) {
+                for (let j = i + 1; j < numbers.length; j++) {
+                    for (let k = j + 1; k < numbers.length; k++) {
+                        const a = numbers[i].value;
+                        const b = numbers[j].value;
+                        const c = numbers[k].value;
+                        
+                        // 检查是否不同色
+                        const types = new Set([numbers[i].type, numbers[j].type, numbers[k].type]);
+                        if (types.size !== 3) continue;
+                        
+                        // 检查是否有一个数是另外两个数的和
+                        if (a === b + c || b === a + c || c === a + b) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        },
+        fan: 3,
+        hasAnimation: false
+    },
+    {
+        name: "清和胡",
+        check: (selectedTiles) => {
+            // 找出所有数字牌
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            if (numbers.length < 3) return false;
+            
+            // 按花色分组
+            const byType = {};
+            numbers.forEach(tile => {
+                if (!byType[tile.type]) byType[tile.type] = [];
+                byType[tile.type].push(tile.value);
+            });
+            
+            // 检查每种花色
+            for (const type in byType) {
+                const values = byType[type];
+                if (values.length < 3) continue;
+                
+                // 检查任意3张牌是否满足条件
+                for (let i = 0; i < values.length; i++) {
+                    for (let j = i + 1; j < values.length; j++) {
+                        for (let k = j + 1; k < values.length; k++) {
+                            const a = values[i];
+                            const b = values[j];
+                            const c = values[k];
+                            
+                            // 检查是否有一个数是另外两个数的和
+                            if (a === b + c || b === a + c || c === a + b) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        },
+        fan: 8,
+        hasAnimation: false
+    },
+    {
+        name: "三清决",
+        check: (selectedTiles) => {
+            // 必须4张牌同色
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            if (numbers.length !== 4) return false;
+            
+            const types = numbers.map(t => t.type);
+            if (!types.every(t => t === types[0])) return false;
+            
+            // 检查是否有一个数是另外三个数的和
+            const values = numbers.map(t => t.value);
+            for (let i = 0; i < values.length; i++) {
+                const sumOthers = values.reduce((sum, val, idx) => idx !== i ? sum + val : sum, 0);
+                if (values[i] === sumOthers) {
+                    return true;
+                }
+            }
+            return false;
+        },
+        fan: 24,
+        hasAnimation: true,
+        textColor: "#FFD700",
+        glowColor: "#FFA500",
+        bgColor: "#332200"
+    },{
+        name: "下北泽之卵",
+        check: (selectedTiles) => {
+            // 字牌数为0
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+
+            // 按花色分组
+            const byType = {};
+            selectedTiles.forEach(tile => {
+                if (!byType[tile.type]) byType[tile.type] = [];
+                byType[tile.type].push(tile.value);
+            });
+
+            const types = Object.keys(byType);
+            if (types.length !== 3) return false; // 必须恰好三种花色
+
+            // 将每种花色的牌排序，以便比较
+            const groups = types.map(type => byType[type].sort((a,b)=>a-b));
+
+            // 定义目标组合：[1], [1,4], [5]
+            const target = [[1], [1,4], [5]].map(arr=>arr.sort());
+
+            // 检查groups是否是target的一种排列
+            // 即groups中的每个数组都能在target中找到匹配，且一一对应
+            const used = new Array(3).fill(false);
+            for (let i=0; i<groups.length; i++) {
+                let found = false;
+                for (let j=0; j<target.length; j++) {
+                    if (!used[j] && JSON.stringify(groups[i]) === JSON.stringify(target[j])) {
+                        used[j] = true;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) return false;
+            }
+            return true;
+        },
+        fan: 15,
+        hasAnimation: false
+    },
+    {
+        name: "七八定理",
+        check: (selectedTiles) => {
+            // 字牌数为0
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+
+            // 按花色分组
+            const byType = {};
+            selectedTiles.forEach(tile => {
+                if (!byType[tile.type]) byType[tile.type] = [];
+                byType[tile.type].push(tile.value);
+            });
+
+            const types = Object.keys(byType);
+            if (types.length !== 3) return false; // 必须恰好三种花色
+
+            // 将每种花色的牌排序，以便比较
+            const groups = types.map(type => byType[type].sort((a,b)=>a-b));
+
+            // 定义目标组合：[2], [7], [7,8]
+            const target = [[2], [7], [7,8]].map(arr=>arr.sort());
+
+            // 检查groups是否是target的一种排列
+            const used = new Array(3).fill(false);
+            for (let i=0; i<groups.length; i++) {
+                let found = false;
+                for (let j=0; j<target.length; j++) {
+                    if (!used[j] && JSON.stringify(groups[i]) === JSON.stringify(target[j])) {
+                        used[j] = true;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) return false;
+            }
+            return true;
+        },
+        fan: 15,
+        hasAnimation: false
     }
+
+
 
 ];
 
