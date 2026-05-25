@@ -1543,9 +1543,106 @@ const FAN_RULES = [
         },
         fan: 15,
         hasAnimation: false
+    },
+    {
+        name: "小七星",
+        check: (selectedTiles, hand) => {
+            // 1. 选的4张全是字牌
+            const allSelectedAreHonor = selectedTiles.every(t => t.type === '风' || t.type === '箭');
+            if (!allSelectedAreHonor) return false;
+
+            // 2. 手牌中必须有6张字牌
+            const honorCount = hand.filter(t => t.type === '风' || t.type === '箭').length;
+            return honorCount === 6;
+        },
+        fan: 24,
+        hasAnimation: true,
+        textColor: "#87CEEB",  // 浅蓝色
+        glowColor: "#00BFFF",
+        bgColor: "#0F1A2A"
+    },
+    {
+        name: "大七星",
+        check: (selectedTiles, hand) => {
+            // 1. 选的4张全是字牌
+            const allSelectedAreHonor = selectedTiles.every(t => t.type === '风' || t.type === '箭');
+            if (!allSelectedAreHonor) return false;
+
+            // 2. 手牌中必须有7张字牌
+            const honorCount = hand.filter(t => t.type === '风' || t.type === '箭').length;
+            return honorCount === 7;
+        },
+        fan: 64,
+        hasAnimation: true,
+        textColor: "#00008B",  // 深蓝色
+        glowColor: "#0000FF",
+        bgColor: "#050810"
+    },
+    {
+        name: "九莲宝灯",
+        check: (selectedTiles, hand) => {
+            // 1. 选的4张必须同色
+            const selectedTypes = selectedTiles.map(t => t.type);
+            if (!selectedTypes.every(t => t === selectedTypes[0])) return false;
+            const color = selectedTypes[0];
+
+            // 2. 手牌中必须有7张该花色的数字牌
+            const sameColorNumbers = hand.filter(t => t.type === color && t.type !== '风' && t.type !== '箭');
+            if (sameColorNumbers.length !== 7) return false;
+
+            // 3. 这7张牌里必须包含1和9
+            const values = sameColorNumbers.map(t => t.value);
+            const has1 = values.includes(1);
+            const has9 = values.includes(9);
+            if (!has1 || !has9) return false;
+
+            // 4. 选的4张也必须全是这个花色
+            return selectedTiles.every(t => t.type === color);
+        },
+        fan: 64,
+        hasAnimation: true,
+        textColor: "#9370DB",  // 紫色 (MediumPurple)
+        glowColor: "#8A2BE2",  // 蓝紫
+        bgColor: "#1A0F2A"
+    },
+    {
+        name: "倒转昆仑",
+        check: (selectedTiles, hand) => {
+            // 允许的牌列表
+            const allowed = [
+                '2条','4条','5条','6条','8条','9条',
+                '4筒','5筒','8筒',
+                '白'
+            ];
+            // 检查手牌和选中的牌
+            return [...hand, ...selectedTiles].every(t => allowed.includes(t.name));
+        },
+        fan: 88,
+        hasAnimation: true,
+        textColor: "#00FFFF",  // 天蓝色 (Cyan)
+        glowColor: "#00CED1",
+        bgColor: "#0A2A2A"
+    },
+    {
+        name: "国士无双",
+        check: (selectedTiles, hand) => {
+            // 允许的幺九牌和字牌
+            const allowed = [
+                '1万','9万',
+                '1筒','9筒',
+                '1条','9条',
+                '东','南','西','北','中','发','白'
+            ];
+            
+            // 检查手牌和选中的牌
+            return [...hand, ...selectedTiles].every(t => allowed.includes(t.name));
+        },
+        fan: 64,
+        hasAnimation: true,
+        textColor: "#8B4513",  // 棕色 (SaddleBrown)
+        glowColor: "#A0522D",
+        bgColor: "#2A1A0F"
     }
-
-
 
 ];
 
@@ -1732,7 +1829,8 @@ function calculateAllFans() {
     let bestRule = null;
     
     FAN_RULES.forEach(rule => {
-        const result = rule.check(selectedTiles);
+        const realHand = hand.filter(t => t !== null);
+        const result = rule.check(selectedTiles, realHand);
         if (result) {
             let fanValue = rule.fan;
             // 轮刻特殊处理
@@ -1816,7 +1914,9 @@ function playRound() {
     let bestRule = null;
     
     FAN_RULES.forEach(rule => {
-        const result = rule.check(selectedTiles);
+        const realHand = hand.filter(t => t !== null);
+        const result = rule.check(selectedTiles, realHand);
+    
         if (result) {
             let fanValue = rule.fan;
             if (rule.name === "轮刻") {
