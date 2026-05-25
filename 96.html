@@ -544,18 +544,28 @@ const FAN_RULES = [
     {
         name: "纯正十全十美",
         check: (selectedTiles) => {
+            // 限制在前9轮
+            if (round > 9) return false;
+            
+            // 字牌数为0
             const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
             if (honors.length > 0) return false;
+            
+            // 4张牌同花色
             const types = selectedTiles.map(t => t.type);
             if (!types.every(t => t === types[0])) return false;
+            
+            // 检查是否能组成两对，每对和为10
             const tilesByType = {};
             selectedTiles.forEach(tile => {
                 if (!tilesByType[tile.type]) tilesByType[tile.type] = [];
                 tilesByType[tile.type].push(tile.value);
             });
+            
             for (const type in tilesByType) {
                 const values = tilesByType[type];
                 if (values.length !== 4) return false;
+                
                 const paired = new Set();
                 for (let i = 0; i < values.length; i++) {
                     for (let j = i+1; j < values.length; j++) {
@@ -571,9 +581,53 @@ const FAN_RULES = [
         },
         fan: 32,
         hasAnimation: true,
-        textColor: "#FF69B4",
-        glowColor: "#FF1493",
-        bgColor: "#330022"
+        textColor: "#FFB6C1",  // 淡粉色 (LightPink)
+        glowColor: "#FF69B4",  // 热粉色
+        bgColor: "#4A2A3A"     // 深粉底色
+    },
+    {
+        name: "超纯正十全十美",
+        check: (selectedTiles) => {
+            // 限制在第10轮
+            if (round !== 10) return false;
+            
+            // 字牌数为0
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            
+            // 4张牌同花色
+            const types = selectedTiles.map(t => t.type);
+            if (!types.every(t => t === types[0])) return false;
+            
+            // 检查是否能组成两对，每对和为10
+            const tilesByType = {};
+            selectedTiles.forEach(tile => {
+                if (!tilesByType[tile.type]) tilesByType[tile.type] = [];
+                tilesByType[tile.type].push(tile.value);
+            });
+            
+            for (const type in tilesByType) {
+                const values = tilesByType[type];
+                if (values.length !== 4) return false;
+                
+                const paired = new Set();
+                for (let i = 0; i < values.length; i++) {
+                    for (let j = i+1; j < values.length; j++) {
+                        if (values[i] + values[j] === 10) {
+                            paired.add(i);
+                            paired.add(j);
+                        }
+                    }
+                }
+                return paired.size === 4;
+            }
+            return false;
+        },
+        fan: 72,
+        hasAnimation: true,
+        textColor: "#FFC0CB",  // 超淡粉色 (Pink)
+        glowColor: "#FFB6C1",  // 淡粉色
+        bgColor: "#5A3A4A"     // 稍亮的深粉底色
     },
     {
         name: "十全十美",
