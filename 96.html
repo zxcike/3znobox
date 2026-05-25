@@ -1162,7 +1162,7 @@ const FAN_RULES = [
         name: "门圈同刻",
         check: (selectedTiles) => {
             const feng = selectedTiles.filter(t => t.type === '风');
-            if (feng.length !== 2) return false;
+            if (feng.length !== 1) return false;
             const names = feng.map(t => t.name);
             return names.includes(menFeng) && names.includes(quanFeng) && menFeng === quanFeng;
         },
