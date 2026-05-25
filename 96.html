@@ -1702,6 +1702,30 @@ const FAN_RULES = [
         textColor: "#F0F8FF",  // 爱丽丝蓝（接近白色）
         glowColor: "#FFFFFF",
         bgColor: "#1A1A1A"
+    },
+    {
+        name: "圣诞老人",
+        check: (selectedTiles, hand) => {
+            // 从手牌中排除选中的4张，得到剩下的4张
+            const remaining = hand.filter(tile => !selectedTiles.includes(tile));
+            
+            // 剩下的4张必须全是筒子
+            return remaining.length === 4 && remaining.every(t => t.type === '筒');
+        },
+        fan: 6,
+        hasAnimation: false
+    },
+    {
+        name: "守财奴",
+        check: (selectedTiles, hand) => {
+            // 从手牌中排除选中的4张，得到剩下的4张
+            const remaining = hand.filter(tile => !selectedTiles.includes(tile));
+            
+            // 剩下的4张必须全是万子
+            return remaining.length === 4 && remaining.every(t => t.type === '万');
+        },
+        fan: 6,
+        hasAnimation: false
     }
 
 ];
