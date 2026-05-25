@@ -460,11 +460,37 @@ const FAN_RULES = [
             const allowed = ['1条','5条','7条','9条','中'];
             return selectedTiles.every(t => allowed.includes(t.name));
         },
-        fan: 56,
+        fan: 48,
         hasAnimation: true,
         textColor: "#ff8888",
         glowColor: "#ff4444",
         bgColor: "#331111"
+    },
+    {
+        name: "绿帽子",
+        check: (selectedTiles) => {
+            // 允许的牌列表
+            const allowed = ['8条','6筒','7筒','9筒','发'];
+            return selectedTiles.every(t => allowed.includes(t.name));
+        },
+        fan: 48,
+        hasAnimation: true,
+        textColor: "#00FF00",  // 绿色
+        glowColor: "#00AA00",
+        bgColor: "#002200"
+    },
+    {
+        name: "黑头履",
+        check: (selectedTiles) => {
+            // 允许的牌列表
+            const allowed = ['1筒','3筒','4筒','5筒','东'];
+            return selectedTiles.every(t => allowed.includes(t.name));
+        },
+        fan: 48,
+        hasAnimation: true,
+        textColor: "#8B0000",  // 暗红色
+        glowColor: "#FF0000",
+        bgColor: "#1A0000"
     },
     {
         name: "四连刻",
