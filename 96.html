@@ -1125,14 +1125,20 @@ const FAN_RULES = [
         fan: 6,
         hasAnimation: false
     },
-
-    // ===== 新增番型 =====
     {
         name: "门风刻",
         check: (selectedTiles) => {
-            const feng = selectedTiles.filter(t => t.type === '风');
-            if (feng.length !== 1) return false;
-            return feng[0].name === menFeng && feng[0].name !== quanFeng;
+            // 找出所有风牌
+            const winds = selectedTiles.filter(t => t.type === '风');
+            if (winds.length === 0) return false;
+            
+            // 是否有门风
+            const hasMenFeng = winds.some(t => t.name === menFeng);
+            // 是否有圈风
+            const hasQuanFeng = winds.some(t => t.name === quanFeng);
+            
+            // 有门风，且没有圈风
+            return hasMenFeng && !hasQuanFeng;
         },
         fan: 3,
         hasAnimation: false
@@ -1140,9 +1146,17 @@ const FAN_RULES = [
     {
         name: "圈风刻",
         check: (selectedTiles) => {
-            const feng = selectedTiles.filter(t => t.type === '风');
-            if (feng.length !== 1) return false;
-            return feng[0].name === quanFeng && feng[0].name !== menFeng;
+            // 找出所有风牌
+            const winds = selectedTiles.filter(t => t.type === '风');
+            if (winds.length === 0) return false;
+            
+            // 是否有门风
+            const hasMenFeng = winds.some(t => t.name === menFeng);
+            // 是否有圈风
+            const hasQuanFeng = winds.some(t => t.name === quanFeng);
+            
+            // 有圈风，且没有门风
+            return hasQuanFeng && !hasMenFeng;
         },
         fan: 3,
         hasAnimation: false
@@ -1150,10 +1164,20 @@ const FAN_RULES = [
     {
         name: "门圈风刻",
         check: (selectedTiles) => {
-            const feng = selectedTiles.filter(t => t.type === '风');
-            if (feng.length !== 2) return false;
-            const names = feng.map(t => t.name);
-            return names.includes(menFeng) && names.includes(quanFeng) && menFeng !== quanFeng;
+            // 找出所有风牌
+            const winds = selectedTiles.filter(t => t.type === '风');
+            if (winds.length < 2) return false;
+            
+            // 是否有门风
+            const hasMenFeng = winds.some(t => t.name === menFeng);
+            // 是否有圈风
+            const hasQuanFeng = winds.some(t => t.name === quanFeng);
+            
+            // 门风和圈风必须不同
+            const different = menFeng !== quanFeng;
+            
+            // 既有门风又有圈风，且两者不同
+            return hasMenFeng && hasQuanFeng && different;
         },
         fan: 9,
         hasAnimation: false
@@ -1161,13 +1185,24 @@ const FAN_RULES = [
     {
         name: "门圈同刻",
         check: (selectedTiles) => {
-            const feng = selectedTiles.filter(t => t.type === '风');
-            if (feng.length !== 1) return false;
-            const names = feng.map(t => t.name);
-            return names.includes(menFeng) && names.includes(quanFeng) && menFeng === quanFeng;
+            // 找出所有风牌
+            const winds = selectedTiles.filter(t => t.type === '风');
+            if (winds.length === 0) return false;
+            
+            // 门风和圈风必须相同
+            const same = menFeng === quanFeng;
+            if (!same) return false;
+            
+            // 是否有这张相同的风牌
+            const hasSameWind = winds.some(t => t.name === menFeng);
+            
+            return hasSameWind;
         },
         fan: 15,
-        hasAnimation: false
+        hasAnimation: true,
+        textColor: "#FFD700",
+        glowColor: "#FFA500",
+        bgColor: "#332200"
     },
     {
         name: "轮刻",
