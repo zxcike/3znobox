@@ -1224,25 +1224,40 @@ const FAN_RULES = [
             const values = numbers.map(t => t.value).sort((a,b)=>a-b);
             return values[2] - values[1] === 1 && values[1] - values[0] === 1;
         },
-        fan: 6,
+        fan: 8,
         hasAnimation: false
     },
     {
         name: "全不靠",
         check: (selectedTiles) => {
+            // 必须有且仅有4张牌
+            if (selectedTiles.length !== 4) return false;
+            
+            // 找出字牌和数字牌
             const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
-            if (honors.length !== 1) return false;
             const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
-            if (numbers.length !== 3) return false;
+            
+            // 必须有1张字牌和3张数字牌
+            if (honors.length !== 1 || numbers.length !== 3) return false;
+            
+            // 3张数字牌必须分别是万、条、筒
             const types = numbers.map(t => t.type);
-            if (new Set(types).size !== 3) return false;
-            const values = numbers.map(t => t.value);
-            const is147 = values.every(v => [1,4,7].includes(v));
-            const is258 = values.every(v => [2,5,8].includes(v));
-            const is369 = values.every(v => [3,6,9].includes(v));
+            if (types.length !== 3) return false;
+            if (!types.includes('万') || !types.includes('条') || !types.includes('筒')) return false;
+            
+            // 检查点数是否符合147、258、369之一
+            const values = numbers.map(t => t.value).sort((a, b) => a - b);
+            
+            // 147组合
+            const is147 = values[0] === 1 && values[1] === 4 && values[2] === 7;
+            // 258组合
+            const is258 = values[0] === 2 && values[1] === 5 && values[2] === 8;
+            // 369组合
+            const is369 = values[0] === 3 && values[1] === 6 && values[2] === 9;
+            
             return is147 || is258 || is369;
         },
-        fan: 8,
+        fan: 12,
         hasAnimation: false
     },
     {
