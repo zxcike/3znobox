@@ -331,6 +331,62 @@ let quanFeng = '东';
 const FAN_RULES = [
     // ===== 原有番型 =====
     {
+        name: "混质胡",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length < 1 || honors.length > 3) return false;
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            const values = numbers.map(t => t.value);
+            return values.every(v => [2,3,5,7].includes(v));
+        },
+        fan: 2,
+        hasAnimation: false
+    },
+    {
+        name: "混合胡",
+        check: (selectedTiles) => {
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length < 1 || honors.length > 3) return false;
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            const values = numbers.map(t => t.value);
+            return values.every(v => [4,6,8,9].includes(v));
+        },
+        fan: 2,
+        hasAnimation: false
+    },
+    {
+        name: "哈基米南北绿豆",
+        check: (selectedTiles) => {
+            // 必须正好4张（防意外）
+            if (selectedTiles.length !== 4) return false;
+
+            const south  = selectedTiles.filter(t => t.type === '风' && t.name === '南');
+            const north  = selectedTiles.filter(t => t.type === '风' && t.name === '北');
+            const yiTiao = selectedTiles.filter(t => t.type === '条' && t.value === 1); // 1条
+            const tongs  = selectedTiles.filter(t => t.type === '筒');
+
+            // 各一张，且筒点数属于 1,2,3,4,5,6,7,9（不许8筒）
+            if (
+                south.length !== 1 ||
+                north.length !== 1 ||
+                yiTiao.length !== 1 ||
+                tongs.length !== 1
+            ) return false;
+
+            const v = tongs[0].value;
+            if (![2,3,4,5,6,7,9].includes(v)) return false;
+
+            // 兜底：确保没混进其它不该有的牌（南/北/一条/筒 之外不能再有第5类）
+            const total = south.concat(north).concat(yiTiao).concat(tongs);
+            return total.length === 4;
+        },
+        fan: 48,
+        hasAnimation: true,
+        textColor: "#ADFF2F",   // 黄绿(GreenYellow)
+        glowColor: "#6B8E23",   // 深黄绿
+        bgColor: "#1A2E10"      // 暗底绿
+    },
+    {
         name: "大四喜",
         check: (selectedTiles) => {
             const winds = selectedTiles.filter(t => t.type === '风');
