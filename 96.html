@@ -1834,8 +1834,9 @@ function showAnimation(rule, selectedTiles) {
     });
     
     for (let i = 0; i < 2; i++) {
-        tilesHtml += `<div class="animation-tile joker">赖</div>`;
+        tilesHtml += `<div class="animation-tile joker"><img src="images/mahjong/lai.png" alt="赖"></div>`;
     }
+
     
     tilesContainer.innerHTML = tilesHtml;
     
@@ -1892,8 +1893,9 @@ function showResult() {
             }
         });
         for (let i = 0; i < 2; i++) {
-            tilesHtml += `<div class="best-round-tile joker">赖</div>`;
+            tilesHtml += `<div class="best-round-tile joker"><img src="images/mahjong/lai.png" alt="赖"></div>`;
         }
+
         
         return `
             <div class="best-round-item">
