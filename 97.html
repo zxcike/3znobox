@@ -1896,7 +1896,7 @@ function adjustWeights() {
             if (skillId === 's2' && tile.type === '筒') weights[idx] += 200; // 筒子之友
             if (skillId === 's3' && tile.type === '条') weights[idx] += 200; // 条子专家
             if (skillId === 's4' && (tile.value === 1 || tile.value === 9 || tile.type === '风' || tile.type === '箭')) weights[idx] += 200; // 幺九守护
-            if (skillId === 's5' && (tile.type === '风' || tile.type === '箭')) weights[idx] += 200; // 字牌收集
+            if (skillId === 's5' && (tile.type === '风' || tile.type === '箭')) weights[idx] += 100; // 字牌收集
             if (skillId === 's6' && tile.value >= 2 && tile.value <= 8) weights[idx] += 300; // 中间力量
         });
     });
