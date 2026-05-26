@@ -1362,15 +1362,23 @@ const FAN_RULES = [
             if (types.length !== 3) return false;
             const values = Object.values(groups).flat();
             const has19 = values.includes(1) && values.includes(9);
+            if (!has19) return false;
+        
+        // ✅ 新增：检查1和9是否同色
+            const oneTile = numbers.find(t => t.value === 1);
+            const nineTile = numbers.find(t => t.value === 9);
+            if (oneTile.type !== nineTile.type) return false;
+        
             const has55 = values.filter(v => v === 5).length === 2;
-            return has19 && has55;
+            return has55;
         },
         fan: 48,
         hasAnimation: true,
         textColor: "#FFA500",
         glowColor: "#FF4500",
         bgColor: "#221100"
-    },{
+    },
+    {
         name: "混双",
         check: (selectedTiles) => {
             const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
