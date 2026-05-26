@@ -1803,7 +1803,7 @@ const FAN_RULES = [
             const allowed = ['1条','5条','7条','9条','中'];
             return selectedTiles.every(t => allowed.includes(t.name));
         },
-        fan: 64,
+        fan: 88,
         hasAnimation: true,
         textColor: "#FFD700",
         glowColor: "#FFAA00",
@@ -1818,7 +1818,7 @@ const FAN_RULES = [
         const values = selectedTiles.map(t => t.value);
         return values.every(v => v === 3 || v === 6 || v === 9);
     },
-    fan: 48,
+    fan: 64,
     hasAnimation: true,
     textColor: "#9370DB",
     glowColor: "#8A2BE2",
@@ -1849,8 +1849,8 @@ const SKILLS = [
     { id: 's13', name: '延长赛', desc: '游戏增加第11轮，第11轮获得分数x1.5', bgColor: '#FFA500' },
     { id: 's14', name: '顶胡升级', desc: '番数大于75番时，得分×1.4', bgColor: '#9b59b6' },
     { id: 's15', name: '超顶胡升级', desc: '番数大于90番时，得分×1.5', bgColor: '#c0392b' },
-    { id: 's16', name: '断幺能手', desc: '手中8张牌无1、9和字牌时，得分×1.9', bgColor: '#FF8C00' },
-    { id: 's17', name: 'ALL IN', desc: '这一轮得分×2', bgColor: '#8B0000' },
+    { id: 's16', name: '断幺能手', desc: '手中8张牌无1、9和字牌时，得分×2.5', bgColor: '#FF8C00' },
+    { id: 's17', name: 'ALL IN', desc: '这一轮得分×3', bgColor: '#8B0000' },
     { id: 's18', name: '三生寰宇', desc: '升级三生万物为三生寰宇', bgColor: '#4B0082' }
 
 
@@ -1895,9 +1895,9 @@ function adjustWeights() {
             if (skillId === 's1' && tile.type === '万') weights[idx] += 200; // 万子偏爱
             if (skillId === 's2' && tile.type === '筒') weights[idx] += 200; // 筒子之友
             if (skillId === 's3' && tile.type === '条') weights[idx] += 200; // 条子专家
-            if (skillId === 's4' && (tile.value === 1 || tile.value === 9 || tile.type === '风' || tile.type === '箭')) weights[idx] += 200; // 幺九守护
-            if (skillId === 's5' && (tile.type === '风' || tile.type === '箭')) weights[idx] += 100; // 字牌收集
-            if (skillId === 's6' && tile.value >= 2 && tile.value <= 8) weights[idx] += 300; // 中间力量
+            if (skillId === 's4' && (tile.value === 1 || tile.value === 9 || tile.type === '风' || tile.type === '箭')) weights[idx] += 100; // 幺九守护
+            if (skillId === 's5' && (tile.type === '风' || tile.type === '箭')) weights[idx] += 200; // 字牌收集
+            if (skillId === 's6' && !(tile.value >= 2 && tile.value <= 8)) weights[idx] -= 75; // 中间力量
         });
     });
 }
@@ -2261,7 +2261,7 @@ function playRound() {
     if (chosenSkills.includes('s15') && totalFan > 90) {
         currentMultiplier *= 1.5;
     }
-    // 技能16：断幺能手（手牌无1、9和字牌时，得分×1.9）
+    // 技能16：断幺能手（手牌无1、9和字牌时，得分×2.5）
     if (chosenSkills.includes('s16')) {
         const validHand = hand.filter(t => t !== null);
         const hasNoYaoJiu = validHand.every(t => {
@@ -2270,12 +2270,12 @@ function playRound() {
             return true;
         });
         if (hasNoYaoJiu) {
-            currentMultiplier *= 1.9;
+            currentMultiplier *= 2.5;
         }
     }
     // 技能17：ALL IN（仅限选技能这一轮，得分×2）
     if (chosenSkills.includes('s17') && isAllInActive) {
-        currentMultiplier *= 2;
+        currentMultiplier *= 3;
         isAllInActive = false; // 用完立即失效
     }
 
