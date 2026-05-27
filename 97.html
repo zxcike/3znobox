@@ -2096,7 +2096,7 @@ const SKILLS = [
     { id: 's18', name: '三生寰宇', desc: '升级三生万物为三生寰宇', bgColor: '#4B0082' },
     // 技能定义
     { id: 's19', name: '万里白杨', desc: '万的清一色番型升级', bgColor: '#AAAAAA' },
-    { id: 's20', name: '厚积薄发', desc: '番数<6时每轮+0.1倍率（无限叠加）', bgColor: '#9370DB' },
+    { id: 's20', name: '厚积薄发', desc: '番数<4时每轮+0.1倍率（无限叠加）', bgColor: '#9370DB' },
     { id: 's21', name: '冰激凌', desc: '得分×1.5，每轮-0.05，打出东北黑水寒重置', bgColor: '#3498db' },
     { id: 's23', name: '门冲煞', desc: '你不会在门圈一致时拿到这张牌，x1.8，平时x0.8', bgColor: '#8B4513' },
     { id: 's24', name: '直冲云霄', desc: '番数大于120番时，分数×1.6', bgColor: '#87CEEB' },
@@ -2601,7 +2601,7 @@ function playRound() {
     }
     if (chosenSkills.includes('s20')) {
         currentMultiplier *= thickMultiplier;
-        if (totalFan < 6) {
+        if (totalFan < 4) {
             thickMultiplier += 0.1;
         }
     }
