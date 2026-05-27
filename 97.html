@@ -1766,6 +1766,7 @@ const FAN_RULES = [
     {
         name: "国士无双",
         check: (selectedTiles, hand) => {
+            if (!chosenSkills.includes('s32')) return false;
             // 允许的幺九牌和字牌
             const allowed = [
                 '1万','9万','1筒','9筒','1条','9条',
@@ -1788,6 +1789,7 @@ const FAN_RULES = [
     {
         name: "国士无双十三面",
         check: (selectedTiles, hand) => {
+            if (!chosenSkills.includes('s33')) return false;
             // 允许的幺九牌和字牌
             const allowed = [
                 '1万','9万','1筒','9筒','1条','9条',
@@ -1797,7 +1799,7 @@ const FAN_RULES = [
             // 手牌8张必须全部来自允许列表
             return hand.every(t => allowed.includes(t.name));
         },
-        fan: 88,
+        fan: 64,
         hasAnimation: true,
         textColor: "#A0522D",  // 浅棕色
         glowColor: "#8B4513",
@@ -2106,7 +2108,8 @@ const SKILLS = [
     // 在 SKILLS 数组中添加
     { id: 's30', name: '问鼎中原', desc: '解锁纯正中原一点红，打出得分+0.2倍', bgColor: '#8B0000' },
     { id: 's31', name: '百发百中', desc: '选牌全为456数字牌时得分×1.6', bgColor: '#4169E1' },
-
+    { id: 's32', name: '国士无双', desc:'获得新番型国士无双', bgColor: '#917813' },
+    { id: 's33', name: '国士无双十三面', desc:'获得新番型国士无双十三面', bgColor: '#911378' },
     { id: 's22', name: '四季发财', desc: '发字的发牌权重增加99999', bgColor: '#39D700' }
 
 
@@ -2209,7 +2212,7 @@ function adjustWeights() {
             if (skillId === 's2' && tile.type === '筒') weights[idx] += 200; // 筒子之友
             if (skillId === 's3' && tile.type === '条') weights[idx] += 200; // 条子专家
             if (skillId === 's4' && (tile.value === 1 || tile.value === 9 || tile.type === '风' || tile.type === '箭')) weights[idx] += 100; // 幺九守护
-            if (skillId === 's5' && (tile.type === '风' || tile.type === '箭')) weights[idx] += 200; // 字牌收集
+            if (skillId === 's5' && (tile.type === '风' || tile.type === '箭')) weights[idx] += 100; // 字牌收集
             if (skillId === 's6' && (tile.value >= 2 && tile.value <= 8)) weights[idx] += 300; // 中间力量
             if (skillId === 's22' && tile.name === '发') 
                 weights[idx] += 99999;
