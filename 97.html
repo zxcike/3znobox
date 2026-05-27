@@ -412,7 +412,7 @@ let pureZhongyuanMultiplier = 1.0; // 纯正中原一点红倍率
 
 
 // 每10轮要求的分数（索引0=10轮，1=20轮...9=100轮），你自己填数字
-const SCORE_REQUIREMENTS = [0,10000, 50000, 120000, 200000, 320000, 500000, 800000, 1200000, 1800000, 3000000];
+const SCORE_REQUIREMENTS = [0,10000, 30000, 60000, 100000, 160000, 250000, 400000, 700000, 1500000, 3000000];
 // 在游戏状态变量区域添加
 let pureMultiplier = 1.0; // 纯净主义倍率
 
@@ -2764,9 +2764,8 @@ function nextRound() {
         const requiredScore = SCORE_REQUIREMENTS[(round-1) / 10];
         updateDisplay();
         if (totalScore < requiredScore) {
-        
-            alert(`第${round}轮未达要求（需${requiredScore}分，当前${totalScore}分），游戏结束！`);
             showResult();
+            alert(`第${round}轮未达要求（需${requiredScore}分，当前${totalScore}分），游戏结束！`)
             return;
         }
     }
