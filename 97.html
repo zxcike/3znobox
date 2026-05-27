@@ -1322,17 +1322,6 @@ const FAN_RULES = [
         hasAnimation: false
     },
     {
-        name: "轮刻",
-        check: (selectedTiles) => {
-            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
-            const remainder = round % 10; // 取余数（1-9，0代表10）
-            const count = numbers.filter(t => t.value === remainder).length;
-            return count;
-        },
-        fan: 0, // 动态计算
-        hasAnimation: false
-    },
-    {
         name: "三节高",
         check: (selectedTiles) => {
             const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
@@ -2451,13 +2440,7 @@ function calculateAllFans() {
         const result = rule.check(selectedTiles, realHand);
         if (result) {
             let fanValue = rule.fan;
-            // 轮刻特殊处理
-            if (rule.name === "轮刻") {
-                const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
-                const count = numbers.filter(t => t.value === round).length;
-                fanValue = count * round;
-            }
-            
+            //我这辈子不会再见到轮刻，操你妈
             allFans.push({
                 name: rule.name,
                 fan: fanValue,
@@ -2545,21 +2528,6 @@ function playRound() {
     
         if (result) {
             let fanValue = rule.fan;
-            if (rule.name === "轮刻") {
-                const remainder = round % 10;
-                const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
-                const count = numbers.filter(t => t.value === remainder).length;
-                fanValue = count * remainder;
-            }
-            if (rule.name === "赤宝牌") {
-                const redCount = selectedTiles.filter(t => 
-                    t.id === 'm5_red' || 
-                    t.id === 'p5_red' || 
-                    t.id === 's5_red').length;
-                fanValue = redCount * 12; // 每张赤宝牌固定12番
-            }
-
-
             allFans.push(fanValue);
             totalFan += fanValue;
             if (fanValue > maxFan) {
