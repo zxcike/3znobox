@@ -2751,6 +2751,10 @@ function showAnimation(rule, selectedTiles) {
 // 下一轮
 function nextRound() {
     round++;
+    if (round > 100) {
+        showResult();
+        return;
+    }
     // 每10轮检查分数要求
     if (round % 10 === 0) {
         
@@ -2775,10 +2779,6 @@ function nextRound() {
     if (skillRounds.includes(round)) {
         showSkillModal();
         return; // 这里停下，不再往下走
-    }
-    if (round > 100) {
-        showResult();
-        return;
     }
 
     // 原来的逻辑（非技能轮）
