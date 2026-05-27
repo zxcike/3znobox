@@ -2111,7 +2111,7 @@ const SKILLS = [
     { id: 's24', name: '直冲云霄', desc: '番数大于120番时，分数×1.6', bgColor: '#87CEEB' },
     { id: 's25', name: '直达天际', desc: '番数大于180番时，分数×1.7', bgColor: '#9370DB' },
     { id: 's26', name: '成双成对', desc: '和对子玩一辈子吧', bgColor: '#32CD32' },
-    { id: 's27', name: '纯净主义', desc: '选的4张牌无字或字一色时倍率+0.2，否则重置为1', bgColor: '#87CEEB' },
+    { id: 's27', name: '纯净主义', desc: '选的4张牌无字或字一色时倍率+0.05', bgColor: '#87CEEB' },
     { id: 's28', name: '赤宝牌', desc: '五万五筒五条各加一张到牌组', bgColor: '#FF0000' },
     { id: 's29', name: '至尊丹青流彩', desc: '解锁至尊丹青流彩', bgColor: '#DD9999'},
     // 在 SKILLS 数组中添加
@@ -2661,9 +2661,7 @@ function playRound() {
         const hasNoHonor = selectedTiles.every(t => t.type !== '风' && t.type !== '箭');
         const isAllHonor = selectedTiles.every(t => t.type === '风' || t.type === '箭');
         if (hasNoHonor || isAllHonor) {
-            pureMultiplier += 0.2;
-        } else {
-            pureMultiplier = 1.0;
+            pureMultiplier += 0.05;
         }
         // 在应用倍数的地方添加
         currentMultiplier *= pureMultiplier;
