@@ -30,6 +30,8 @@ body {
     margin-bottom: 4px;
     font-size: 10px;
 }
+
+
 .hand-area {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -117,7 +119,7 @@ body {
 /* 动画界面 */
 .animation-overlay {
     position: fixed;
-    top: 0;
+    top: -20%;
     left: 0;
     width: 100%;
     height: 100%;
@@ -291,6 +293,9 @@ body {
             <span>门风:<span id="menFeng">东</span> 圈风:<span id="quanFeng">东</span></span>
             <span>总分: <span id="score">0</span></span>
         </div>
+        <div class="info-bar" style="margin-top: 2px; color: #FFD700;">
+            <span>下阶段目标: <span id="nextGoal">0</span> 分</span>
+        </div>
         <div class="hand-area" id="hand"></div>
         <div class="controls">
             <button id="smartBtn" onclick="smartSelect()">智能选牌</button>
@@ -396,10 +401,20 @@ let selectedIndices = [];
 let round = 1;
 let totalScore = 0;
 let roundHistory = [];
-
+let thickMultiplier = 1.0;
 // 新增：门风和圈风
 let menFeng = '东';
 let quanFeng = '东';
+let iceCreamMultiplier = 1.5;
+// 游戏状态变量区域添加
+let hasAddedRedTiles = false; // 是否已添加赤宝牌
+let pureZhongyuanMultiplier = 1.0; // 纯正中原一点红倍率
+
+
+// 每10轮要求的分数（索引0=10轮，1=20轮...9=100轮），你自己填数字
+const SCORE_REQUIREMENTS = [0,10000, 50000, 120000, 200000, 320000, 500000, 800000, 1200000, 1800000, 3000000];
+// 在游戏状态变量区域添加
+let pureMultiplier = 1.0; // 纯净主义倍率
 
 const FAN_RULES = [
     // ===== 原有番型 =====
@@ -626,7 +641,7 @@ const FAN_RULES = [
         },
         fan: 24,
         hasAnimation: true,
-        textColor: "#00008B",
+        textColor: "#999999",
         glowColor: "#0000FF",
         bgColor: "#000011"
     },
@@ -638,7 +653,7 @@ const FAN_RULES = [
         },
         fan: 32,
         hasAnimation: true,
-        textColor: "#000000",
+        textColor: "#999999",
         glowColor: "#333333",
         bgColor: "#111111"
     },
@@ -653,6 +668,19 @@ const FAN_RULES = [
         textColor: "#FF4500",
         glowColor: "#FF0000",
         bgColor: "#330000"
+    },
+    {
+        name: "纯正中原一点红",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s30')) return false;
+            const allowed = ['1筒','3筒','5筒','6筒','7筒','9筒'];
+            return selectedTiles.every(t => allowed.includes(t.name));
+        },
+        fan: 48,
+        hasAnimation: true,
+        textColor: "#FF0000",
+        glowColor: "#FF6347",
+        bgColor: "#8B0000"
     },
     {
         name: "纯正十全十美",
@@ -702,7 +730,7 @@ const FAN_RULES = [
         name: "超纯正十全十美",
         check: (selectedTiles) => {
             // 限制在第10轮
-            if (round !== 10) return false;
+            if (round %10 !== 0) return false;
             
             // 字牌数为0
             const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
@@ -784,10 +812,7 @@ const FAN_RULES = [
             return Object.values(counts).some(c => c >= 3);
         },
         fan: 16,
-        hasAnimation: true,
-        textColor: "#FFFFE0",
-        glowColor: "#FFFF00",
-        bgColor: "#333300"
+        hasAnimation: false,
     },
     {
         name: "小三元",
@@ -796,10 +821,7 @@ const FAN_RULES = [
             return arrows.length === 2 && new Set(arrows.map(t => t.name)).size === 2;
         },
         fan: 16,
-        hasAnimation: true,
-        textColor: "#DDA0DD",
-        glowColor: "#DA70D6",
-        bgColor: "#220022"
+        hasAnimation: false,
     },
     {
         name: "三生万物",
@@ -932,8 +954,10 @@ const FAN_RULES = [
             if (others.length !== 2) return false;
             const allowed1 = ['4筒','8筒'];
             const allowed2 = ['4筒','8筒','2条','3条','4条','6条','8条'];
-            return (allowed1.includes(others[0].name) && allowed2.includes(others[1].name)) ||
+            const isTriggered = (allowed1.includes(others[0].name) && allowed2.includes(others[1].name)) ||
                    (allowed1.includes(others[1].name) && allowed2.includes(others[0].name));
+            if (isTriggered) iceCreamMultiplier = 1.5;
+            return isTriggered;
         },
         fan: 24,
         hasAnimation: true,
@@ -1155,6 +1179,33 @@ const FAN_RULES = [
         },
         fan: 4,
         hasAnimation: false
+    },    
+    {
+        name: "金鸡独立",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s12')) return false;
+            
+            // 选出的牌：只能是1579条和中
+            const allowedSelected = ['1条','5条','7条','9条','中'];
+            const selectedValid = selectedTiles.every(t => allowedSelected.includes(t.name));
+            if (!selectedValid) return false;
+            
+            // 剩下的牌：只能是48筒、23468条、东南西北发
+            const remainingTiles = hand.filter(t => t !== null && !selectedTiles.includes(t));
+            const allowedRemaining = [
+                '4筒','8筒',
+                '2条','3条','4条','6条','8条',
+                '东','南','西','北','发'
+            ];
+            const remainingValid = remainingTiles.every(t => allowedRemaining.includes(t.name));
+            
+            return remainingValid;
+        },
+        fan: 64, // 你可以根据需要调整番数
+        hasAnimation: true,
+        textColor: "#FFD700",
+        glowColor: "#FFAA00",
+        bgColor: "#332200"
     },
     {
         name: "断红胡",
@@ -1274,8 +1325,9 @@ const FAN_RULES = [
         name: "轮刻",
         check: (selectedTiles) => {
             const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
-            const values = numbers.map(t => t.value);
-            return values.filter(v => v === round).length;
+            const remainder = round % 10; // 取余数（1-9，0代表10）
+            const count = numbers.filter(t => t.value === remainder).length;
+            return count;
         },
         fan: 0, // 动态计算
         hasAnimation: false
@@ -1818,20 +1870,212 @@ const FAN_RULES = [
         bgColor: "#332200"
     },
     {
-    name: "三生寰宇",
-    check: (selectedTiles) => {
-        if (!chosenSkills.includes('s18')) return false;
-        const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
-        if (honors.length > 0) return false;
-        const values = selectedTiles.map(t => t.value);
-        return values.every(v => v === 3 || v === 6 || v === 9);
+        name: "三生寰宇",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s18')) return false;
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const values = selectedTiles.map(t => t.value);
+            return values.every(v => v === 3 || v === 6 || v === 9);
+        },
+        fan: 64,
+        hasAnimation: true,
+        textColor: "#9370DB",
+        glowColor: "#8A2BE2",
+        bgColor: "#2E0854"
     },
-    fan: 64,
-    hasAnimation: true,
-    textColor: "#9370DB",
-    glowColor: "#8A2BE2",
-    bgColor: "#2E0854"
-}
+    {
+        name: "万里白杨",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s19')) return false;
+            return selectedTiles.every(t => t.type === '万');
+        },
+        fan: 32,
+        hasAnimation: true,
+        textColor: "#FFFFFF",
+        glowColor: "#FFFFFF",
+        bgColor: "#333333"
+    },
+    {
+        name: "万里长城",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s19')) return false;
+            if (!selectedTiles.every(t => t.type === '万')) return false;
+            const values = selectedTiles.map(t => t.value).sort((a,b)=>a-b);
+            if (values.length !== 4) return false;
+            for (let i = 1; i < values.length; i++) {
+                if (values[i] !== values[i-1] + 1) return false;
+            }
+            return true;
+        },
+        fan: 48,
+        hasAnimation: true,
+        textColor: "#DAA520",
+        glowColor: "#DAA520",
+        bgColor: "#332200"
+    },
+    {
+        name: '四季发财',
+        check: (selectedTiles) => {
+        // 必须装备 s22 技能，且选中的牌里有“发”
+            if (!chosenSkills.includes('s22')) return false;
+            return selectedTiles.some(t => t.name === '发');
+        },
+        fan: 24,
+        hasAnimation: false,
+    },
+    {
+        name: "成双成对",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s26')) return false;
+            const values = selectedTiles.map(t => t.value);
+            const counts = {};
+            values.forEach(v => counts[v] = (counts[v]||0)+1);
+            return Object.values(counts).filter(c => c >= 2).length >= 2;
+        },
+        fan: 32,
+        hasAnimation: true,
+        textColor: "#32CD32",
+        glowColor: "#00FF00",
+        bgColor: "#0A2E0A"
+    },
+    {
+        name: "成叒成对",
+        check: (selectedTiles, hand) => {
+            // 需要选了双双同刻技能 (假设s19是双双同刻)
+            if (!chosenSkills.includes('s19')) return false;
+            const selectedValues = selectedTiles.map(t => t.value);
+            const counts = {};
+            selectedValues.forEach(v => counts[v] = (counts[v]||0)+1);
+            if (Object.values(counts).filter(c => c >= 2).length < 2) return false;
+
+            // 检查剩下4张牌是否有2张点数一样
+            const selectedSet = new Set(selectedTiles.map(t => t.id));
+            const remainingTiles = hand.filter(t => !selectedSet.has(t.id));
+            const remainCounts = {};
+            remainingTiles.forEach(t => {
+                remainCounts[t.value] = (remainCounts[t.value]||0) + 1;
+            });
+            return Object.values(remainCounts).some(c => c === 2);
+        },
+        fan: 24,
+        hasAnimation: false
+    },
+    {
+        name: "成叕成对",
+        check: (selectedTiles, hand) => {
+            // 需要选了双双同刻技能
+            if (!chosenSkills.includes('s19')) return false;
+            
+            // 检查选中的4张是否双双同刻
+            const selVals = selectedTiles.map(t => t.value);
+            const selCounts = {};
+            selVals.forEach(v => selCounts[v] = (selCounts[v]||0)+1);
+            if (Object.values(selCounts).filter(c => c >= 2).length < 2) return false;
+
+            // 检查剩下4张是否也是双双同刻
+            const selectedSet = new Set(selectedTiles.map(t => t.id));
+            const remainingTiles = hand.filter(t => !selectedSet.has(t.id));
+            const remVals = remainingTiles.map(t => t.value);
+            const remCounts = {};
+            remVals.forEach(v => remCounts[v] = (remCounts[v]||0)+1);
+            return Object.values(remCounts).filter(c => c >= 2).length >= 2;
+        },
+        fan: 88,
+        hasAnimation: true,
+        textColor: "#FFD700",
+        glowColor: "#FFA500",
+        bgColor: "#1A0E00"
+    },
+    {
+        name: "赤宝牌",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s28')) return false;
+            const redCount = selectedTiles.filter(t =>
+                t.id === 'm5_red' ||
+                t.id === 'p5_red' ||
+                t.id === 's5_red'
+            ).length;
+            return redCount === 1;
+        },
+        fan: 24,
+        hasAnimation: false,
+    },
+    {
+        name: "赤宝牌",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s28')) return false;
+            const redCount = selectedTiles.filter(t =>
+                t.id === 'm5_red' ||
+                t.id === 'p5_red' ||
+                t.id === 's5_red'
+            ).length;
+            return redCount === 2;
+        },
+        fan: 48,
+        hasAnimation: false,
+    },
+    {
+        name: "赤宝牌",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s28')) return false;
+            const redCount = selectedTiles.filter(t =>
+                t.id === 'm5_red' ||
+                t.id === 'p5_red' ||
+                t.id === 's5_red'
+            ).length;
+            return redCount === 3;
+        },
+        fan: 72,
+        hasAnimation: false,
+    },    
+    {
+        name: "至尊丹青流彩",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s29')) return false;
+            const allowed = ['1条','5条','7条','9条','1筒','3筒','5筒','6筒','7筒','9筒'];
+            return selectedTiles.every(t => allowed.includes(t.name));
+        },
+        fan: 32,
+        hasAnimation: true,
+        textColor: "#BB9922",
+        glowColor: "#FFB6C1",
+        bgColor: "#FFB6C1"
+    },
+    {
+        name: "纯正至尊丹青流彩",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s29')) return false;
+            const allowed = ['1筒','3筒','5筒','6筒','7筒','9筒'];
+            return selectedTiles.every(t => allowed.includes(t.name));
+        },
+        fan: 88,
+        hasAnimation: true,
+        textColor: "#FFFFFF",
+        glowColor: "#FFD700",
+        bgColor: "#FFC0CB"
+    },
+
+    {
+        name: "同色双龙会",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s28')) return false;
+            const suit = selectedTiles[0].type;
+            if (!selectedTiles.every(t => t.type === suit)) return false;
+            const vals = selectedTiles.map(t => t.value);
+            const c5 = vals.filter(v => v === 5).length;
+            const c1 = vals.filter(v => v === 1).length;
+            const c9 = vals.filter(v => v === 9).length;
+            return c5 === 2 && c1 === 1 && c9 === 1;
+        },
+        fan: 88,
+        hasAnimation: true,
+        textColor: "#FF0000",
+        glowColor: "#FF4500",
+        bgColor: "#330000"
+    }
+
+
 
 
 ];
@@ -1851,15 +2095,31 @@ const SKILLS = [
     { id: 's7', name: '大胡升级', desc: '当本轮番数达到50时，获得的分数x1.3', bgColor:'#992299' },
     { id: 's8', name: '得分倍增', desc: '获得的分数×1.2', bgColor: '#3498db' },
     { id: 's9', name: '幸运暴击', desc: '获得的分数×1.1或×1.3', bgColor: '#e74c3c' },
-    { id: 's10', name: '终极暴击', desc: '获得的分数×0.8或×1.5', bgColor: '#c0392b' },
-    { id: 's11', name: '天堂地狱', desc: '获得的分数×0.2或×2.0', bgColor: '#9b59b6' },
+    { id: 's10', name: '终极暴击', desc: '获得的分数×0.8或×1.6', bgColor: '#c0392b' },
+    { id: 's11', name: '天堂地狱', desc: '获得的分数×0.4或×2.0', bgColor: '#9b59b6' },
     { id: 's12', name: '金孔雀', desc: '红孔雀升级为金孔雀', bgColor: '#FFD700' },
-    { id: 's13', name: '延长赛', desc: '游戏增加第11轮，第11轮获得分数x1.5', bgColor: '#FFA500' },
     { id: 's14', name: '顶胡升级', desc: '番数大于75番时，得分×1.4', bgColor: '#9b59b6' },
     { id: 's15', name: '超顶胡升级', desc: '番数大于90番时，得分×1.5', bgColor: '#c0392b' },
     { id: 's16', name: '断幺能手', desc: '手中8张牌无1、9和字牌时，得分×2.5', bgColor: '#FF8C00' },
     { id: 's17', name: 'ALL IN', desc: '这一轮得分×3', bgColor: '#8B0000' },
-    { id: 's18', name: '三生寰宇', desc: '升级三生万物为三生寰宇', bgColor: '#4B0082' }
+    { id: 's18', name: '三生寰宇', desc: '升级三生万物为三生寰宇', bgColor: '#4B0082' },
+    // 技能定义
+    { id: 's19', name: '万里白杨', desc: '万的清一色番型升级', bgColor: '#AAAAAA' },
+    { id: 's20', name: '厚积薄发', desc: '番数<6时每轮+0.1倍率（无限叠加）', bgColor: '#9370DB' },
+    { id: 's21', name: '冰激凌', desc: '得分×1.5，每轮-0.05，打出东北黑水寒重置', bgColor: '#3498db' },
+    { id: 's23', name: '门冲煞', desc: '你不会在门圈一致时拿到这张牌，x1.8，平时x0.8', bgColor: '#8B4513' },
+    { id: 's24', name: '直冲云霄', desc: '番数大于120番时，分数×1.6', bgColor: '#87CEEB' },
+    { id: 's25', name: '直达天际', desc: '番数大于180番时，分数×1.7', bgColor: '#9370DB' },
+    { id: 's26', name: '成双成对', desc: '和对子玩一辈子吧', bgColor: '#32CD32' },
+    { id: 's27', name: '纯净主义', desc: '选的4张牌无字或字一色时倍率+0.2，否则重置为1', bgColor: '#87CEEB' },
+    { id: 's28', name: '赤宝牌', desc: '五万五筒五条各加一张到牌组', bgColor: '#FF0000' },
+    { id: 's29', name: '至尊丹青流彩', desc: '解锁至尊丹青流彩', bgColor: '#DD9999'},
+    // 在 SKILLS 数组中添加
+    { id: 's30', name: '问鼎中原', desc: '解锁纯正中原一点红，打出得分+0.2倍', bgColor: '#8B0000' },
+    { id: 's31', name: '百发百中', desc: '选牌全为456数字牌时得分×1.6', bgColor: '#4169E1' },
+
+    { id: 's22', name: '四季发财', desc: '发字的发牌权重增加99999', bgColor: '#39D700' }
+
 
 
 ];
@@ -1872,7 +2132,53 @@ let isAllInActive = false;
 
 // 初始化
 function init() {
+    hasAddedRedTiles = false; 
+    pureZhongyuanMultiplier = 1;
+    const deck = [
+        // 万子
+        {id: 'm1', name: '1万', type: '万', value: 1, img: 'images/mahjong/m1.png'},
+        {id: 'm2', name: '2万', type: '万', value: 2, img: 'images/mahjong/m2.png'},
+        {id: 'm3', name: '3万', type: '万', value: 3, img: 'images/mahjong/m3.png'},
+        {id: 'm4', name: '4万', type: '万', value: 4, img: 'images/mahjong/m4.png'},
+        {id: 'm5', name: '5万', type: '万', value: 5, img: 'images/mahjong/m5.png'},
+        {id: 'm6', name: '6万', type: '万', value: 6, img: 'images/mahjong/m6.png'},
+        {id: 'm7', name: '7万', type: '万', value: 7, img: 'images/mahjong/m7.png'},
+        {id: 'm8', name: '8万', type: '万', value: 8, img: 'images/mahjong/m8.png'},
+        {id: 'm9', name: '9万', type: '万', value: 9, img: 'images/mahjong/m9.png'},
+        // 条子
+        {id: 's1', name: '1条', type: '条', value: 1, img: 'images/mahjong/s1.png'},
+        {id: 's2', name: '2条', type: '条', value: 2, img: 'images/mahjong/s2.png'},
+        {id: 's3', name: '3条', type: '条', value: 3, img: 'images/mahjong/s3.png'},
+        {id: 's4', name: '4条', type: '条', value: 4, img: 'images/mahjong/s4.png'},
+        {id: 's5', name: '5条', type: '条', value: 5, img: 'images/mahjong/s5.png'},
+        {id: 's6', name: '6条', type: '条', value: 6, img: 'images/mahjong/s6.png'},
+        {id: 's7', name: '7条', type: '条', value: 7, img: 'images/mahjong/s7.png'},
+        {id: 's8', name: '8条', type: '条', value: 8, img: 'images/mahjong/s8.png'},
+        {id: 's9', name: '9条', type: '条', value: 9, img: 'images/mahjong/s9.png'},
+        // 筒子
+        {id: 'p1', name: '1筒', type: '筒', value: 1, img: 'images/mahjong/p1.png'},
+        {id: 'p2', name: '2筒', type: '筒', value: 2, img: 'images/mahjong/p2.png'},
+        {id: 'p3', name: '3筒', type: '筒', value: 3, img: 'images/mahjong/p3.png'},
+        {id: 'p4', name: '4筒', type: '筒', value: 4, img: 'images/mahjong/p4.png'},
+        {id: 'p5', name: '5筒', type: '筒', value: 5, img: 'images/mahjong/p5.png'},
+        {id: 'p6', name: '6筒', type: '筒', value: 6, img: 'images/mahjong/p6.png'},
+        {id: 'p7', name: '7筒', type: '筒', value: 7, img: 'images/mahjong/p7.png'},
+        {id: 'p8', name: '8筒', type: '筒', value: 8, img: 'images/mahjong/p8.png'},
+        {id: 'p9', name: '9筒', type: '筒', value: 9, img: 'images/mahjong/p9.png'},
+        // 字牌
+        {id: 'z1', name: '东', type: '风', value: 11, img: 'images/mahjong/z1.png'},
+        {id: 'z2', name: '南', type: '风', value: 12, img: 'images/mahjong/z2.png'},
+        {id: 'z3', name: '西', type: '风', value: 13, img: 'images/mahjong/z3.png'},
+        {id: 'z4', name: '北', type: '风', value: 14, img: 'images/mahjong/z4.png'},
+        {id: 'z5', name: '中', type: '箭', value: 15, img: 'images/mahjong/z5.png'},
+        {id: 'z6', name: '发', type: '箭', value: 16, img: 'images/mahjong/z6.png'},
+        {id: 'z7', name: '白', type: '箭', value: 17, img: 'images/mahjong/z7.png'}
+    ];
+
     chosenSkills = [];
+    iceCreamMultiplier = 1.5;
+    thickMultiplier = 1.1;
+    pureMultiplier = 1.0;
     // 随机门风
     const fengs = ['东','南','西','北'];
     menFeng = fengs[Math.floor(Math.random() * 4)];
@@ -1886,6 +2192,16 @@ function init() {
 
 // 智能选牌（简化版）
 
+// 更新下一个目标分数显示
+function updateNextGoal() {
+    const currentStage = Math.ceil(round / 10); // 当前是第几个10轮阶段
+    if (currentStage < 10) {
+        const nextGoal = SCORE_REQUIREMENTS[currentStage]; // 下一个阶段的目标
+        document.getElementById('nextGoal').innerText = nextGoal;
+    } else {
+        document.getElementById('nextGoal').innerText = '已完成';
+    }
+}
 
 // 重置牌堆
 function resetDeck() {
@@ -1905,7 +2221,20 @@ function adjustWeights() {
             if (skillId === 's3' && tile.type === '条') weights[idx] += 200; // 条子专家
             if (skillId === 's4' && (tile.value === 1 || tile.value === 9 || tile.type === '风' || tile.type === '箭')) weights[idx] += 100; // 幺九守护
             if (skillId === 's5' && (tile.type === '风' || tile.type === '箭')) weights[idx] += 200; // 字牌收集
-            if (skillId === 's6' && !(tile.value >= 2 && tile.value <= 8)) weights[idx] -= 75; // 中间力量
+            if (skillId === 's6' && (tile.value >= 2 && tile.value <= 8)) weights[idx] += 300; // 中间力量
+            if (skillId === 's22' && tile.name === '发') 
+                weights[idx] += 99999;
+                
+                
+                
+                
+                
+                
+            // 最后最后再判断    
+            if (skillId === 's24' && tile.type === '风' && tile.name === menFeng && menFeng === quanFeng) 
+                weights[idx] = 0;
+            
+            
         });
     });
 }
@@ -2161,6 +2490,13 @@ function calculateAllFans() {
     renderAllFans(allFans, totalFan);
     return totalFan;
 }
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
 
 // 渲染所有番型
 function renderAllFans(allFans, totalFan) {
@@ -2210,10 +2546,20 @@ function playRound() {
         if (result) {
             let fanValue = rule.fan;
             if (rule.name === "轮刻") {
+                const remainder = round % 10;
                 const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
-                const count = numbers.filter(t => t.value === round).length;
-                fanValue = count * round;
+                const count = numbers.filter(t => t.value === remainder).length;
+                fanValue = count * remainder;
             }
+            if (rule.name === "赤宝牌") {
+                const redCount = selectedTiles.filter(t => 
+                    t.id === 'm5_red' || 
+                    t.id === 'p5_red' || 
+                    t.id === 's5_red').length;
+                fanValue = redCount * 12; // 每张赤宝牌固定12番
+            }
+
+
             allFans.push(fanValue);
             totalFan += fanValue;
             if (fanValue > maxFan) {
@@ -2251,15 +2597,11 @@ function playRound() {
     }
     // 技能10：终极暴击
     if (chosenSkills.includes('s10')) {
-        currentMultiplier *= Math.random() < 0.5 ? 0.8 : 1.5;
+        currentMultiplier *= Math.random() < 0.5 ? 0.8 : 1.6;
     }
     // 技能11：天堂and地狱
     if (chosenSkills.includes('s11')) {
-        currentMultiplier *= Math.random() < 0.5 ? 0.2 : 2.0;
-    }
-    // 技能13：延长赛（第11轮得分×1.5）
-    if (round === 11 && chosenSkills.includes('s13')) {
-        currentMultiplier *= 1.5;
+        currentMultiplier *= Math.random() < 0.5 ? 0.4 : 2.0;
     }
     // 技能14：顶胡升级（番数>75时，得分×1.4）
     if (chosenSkills.includes('s14') && totalFan > 75) {
@@ -2285,6 +2627,70 @@ function playRound() {
     if (chosenSkills.includes('s17') && isAllInActive) {
         currentMultiplier *= 3;
         isAllInActive = false; // 用完立即失效
+    }
+    if (chosenSkills.includes('s20')) {
+        currentMultiplier *= thickMultiplier;
+        if (totalFan < 6) {
+            thickMultiplier += 0.1;
+        }
+    }
+    if (chosenSkills.includes('s21')) {
+        currentMultiplier *= iceCreamMultiplier;
+        iceCreamMultiplier = Math.max(iceCreamMultiplier - 0.05, 1); 
+    }
+        // 技能23：门冲煞
+    if (chosenSkills.includes('s23')) {
+        if (menFeng === quanFeng) {
+            currentMultiplier *= 1.8;
+        } else {
+            currentMultiplier *= 0.8;
+        }
+    }
+    // 技能24：直冲云霄
+    if (chosenSkills.includes('s24') && totalFan > 120) {
+        currentMultiplier *= 1.6;
+    }
+
+    // 技能25：直达天际
+    if (chosenSkills.includes('s25') && totalFan > 180) {
+        currentMultiplier *= 1.7;
+    }
+// 在 playRound 函数中，计算番型前添加
+    if (chosenSkills.includes('s27')) {
+        const selectedTiles = selectedIndices.map(i => hand[i]);
+        const hasNoHonor = selectedTiles.every(t => t.type !== '风' && t.type !== '箭');
+        const isAllHonor = selectedTiles.every(t => t.type === '风' || t.type === '箭');
+        if (hasNoHonor || isAllHonor) {
+            pureMultiplier += 0.2;
+        } else {
+            pureMultiplier = 1.0;
+        }
+        // 在应用倍数的地方添加
+        currentMultiplier *= pureMultiplier;
+
+    }
+    if (chosenSkills.includes('s30')) {
+    // 检查是否打出了纯正中原一点红
+        const hasPureZhongyuan = FAN_RULES.find(rule => 
+            rule.name === "纯正中原一点红" && rule.check(selectedTiles, hand.filter(t => t !== null))
+        );
+    
+        if (hasPureZhongyuan) {
+            pureZhongyuanMultiplier += 0.2; // 每次打出提升0.2倍
+        }
+        currentMultiplier *= pureZhongyuanMultiplier;
+    }
+    // 在 playRound 函数里，计算 currentMultiplier 的地方插入
+    if (chosenSkills.includes('s31')) {
+        const selectedTiles = selectedIndices.map(i => hand[i]);
+        // 检查是否全是 4、5、6 的数字牌
+        const isAll456 = selectedTiles.every(t => 
+            (t.type === '万' || t.type === '筒' || t.type === '条') &&
+            (t.value === 4 || t.value === 5 || t.value === 6)
+        );
+        if (isAll456) {
+            currentMultiplier *= 1.6;
+        }
     }
 
     currentMultiplier = Math.round(currentMultiplier * 100) / 100;
@@ -2376,27 +2782,37 @@ function showAnimation(rule, selectedTiles) {
 // 下一轮
 function nextRound() {
     round++;
-    
-    // ✅ 第 2、5、8 轮停住，选技能
-    const skillRounds = [2, 5, 8];
-    if (chosenSkills.includes('s13')) {
-        skillRounds.push(11);
+    // 每10轮检查分数要求
+    if (round % 10 === 0) {
+        
+        // 换门风（东南西北循环）
+        const fengs = ['东','南','西','北'];
+        const idx = fengs.indexOf(menFeng);
+        menFeng = fengs[(idx + 1) % 4];
+        document.getElementById('menFeng').innerText = menFeng;
     }
+    if (round % 10 === 1) {
+        const requiredScore = SCORE_REQUIREMENTS[(round-1) / 10];
+        updateDisplay();
+        if (totalScore < requiredScore) {
+        
+            alert(`第${round}轮未达要求（需${requiredScore}分，当前${totalScore}分），游戏结束！`);
+            showResult();
+            return;
+        }
+    }
+    // ✅ 第 2、5、8 轮停住，选技能
+    const skillRounds = [8, 12, 18, 22, 28, 32, 38, 42, 48, 52, 58, 62, 68, 72, 78, 82, 88, 92, 98];
     
     if (skillRounds.includes(round)) {
         showSkillModal();
         return; // 这里停下，不再往下走
     }
-    
-    if (round > 10 && !chosenSkills.includes('s13')) {
+    if (round > 100) {
         showResult();
         return;
     }
-    
-    if (round > 11 && chosenSkills.includes('s13')) {
-        showResult();
-        return;
-    }
+
     // 原来的逻辑（非技能轮）
     const quanOrder = ['东','南','西','北'];
     const idx = quanOrder.indexOf(quanFeng);
@@ -2453,8 +2869,17 @@ function showSkillModal() {
 function chooseSkill(skillId) {
     // ✅ 记录已选技能
     chosenSkills.push(skillId);
+    
     if (skillId === 's17') {
         isAllInActive = true;
+    }
+    if (skillId === 's28') {
+        deck.push(
+            { id: 'm5_red', name: '赤五万', type: '万', value: 5, img: 'images/mahjong/m5_red.png'},
+            { id: 'p5_red', name: '赤五筒', type: '筒', value: 5, img: 'images/mahjong/p5_red.png'},
+            { id: 's5_red', name: '赤五条', type: '条', value: 5, img: 'images/mahjong/s5_red.png'}
+        );
+        shuffle(deck);
     }
     const listEl = document.getElementById('chosenSkillsList');
     const names = chosenSkills.map(id => SKILLS.find(s => s.id === id).name.replace('技能', '技'));
@@ -2530,6 +2955,7 @@ function updateDisplay() {
     document.getElementById('score').innerText = totalScore;
     document.getElementById('menFeng').innerText = menFeng;
     document.getElementById('quanFeng').innerText = quanFeng;
+    updateNextGoal(); 
 }
 
 // 启动游戏
@@ -2539,7 +2965,7 @@ init();
 <div id="skillModal" style="
     display: none;
     position: fixed;
-    top: 0;
+    top: -20%;
     left: 0;
     width: 100%;
     height: 100%;
