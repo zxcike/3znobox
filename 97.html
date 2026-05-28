@@ -398,7 +398,7 @@ const TILES = [
 let deck = [];
 let hand = [];
 let selectedIndices = [];
-let round = 1;
+let round = 1 ;
 let totalScore = 0;
 let roundHistory = [];
 let thickMultiplier = 1.0;
@@ -409,7 +409,7 @@ let iceCreamMultiplier = 1.6;
 // 游戏状态变量区域添加
 let hasAddedRedTiles = false; // 是否已添加赤宝牌
 let pureZhongyuanMultiplier = 1.0; // 纯正中原一点红倍率
-let kaifazhemoshi = false;
+let kaifazhemoshi = false ;
 let wanJianQiFaMultiplier = 1.0;
 // 每10轮要求的分数（索引0=10轮，1=20轮...9=100轮），你自己填数字
 const SCORE_REQUIREMENTS = [0,10000, 30000, 60000, 100000, 160000, 250000, 400000, 700000, 1500000, 3000000, 6000000];
@@ -2145,7 +2145,6 @@ const FAN_RULES = [
 
 ];
 // ======================================================
-// 技能库（暂时只显示文字，效果后续填）
 // ======================================================
 // ======================================================
 // 技能库（带颜色）
@@ -2249,7 +2248,7 @@ function init() {
         {id: 'z7', name: '白', type: '箭', value: 17, img: 'images/mahjong/z7.png'}
     ];
 
-    chosenSkills = [ ];
+    chosenSkills = [  ];
     iceCreamMultiplier = 1.6;
     thickMultiplier = 1.1;
     pureMultiplier = 1.0;
@@ -2971,19 +2970,29 @@ function showResult() {
     const sortedRounds = [...roundHistory].sort((a, b) => b.fan - a.fan);
     const top3 = sortedRounds.slice(0, 3);
     
-    bestRoundsListEl.innerHTML = top3.map((roundData, index) => {
+    bestRoundsListEl.innerHTML = top3.map((roundData) => {
         let tilesHtml = '';
         roundData.tiles.forEach(tileName => {
-            const tile = TILES.find(t => t.name === tileName);
+            // ✅ 关键修复：同时查基础牌库和条件牌库
+            let tile = TILES.find(t => t.name === tileName);
+            if (!tile) {
+                // 查当前牌堆（含已加入的赤宝牌）
+                tile = deck.find(t => t.name === tileName);
+            }
+            if (!tile) {
+                // 兜底：防止未知牌名报错
+                tile = { img: 'images/mahjong/back.png', name: tileName };
+            }
+            
             for (let i = 0; i < 3; i++) {
-                tilesHtml += `<div class="best-round-tile"><img src="${tile.img}" alt="${tileName}"></div>`;
+                tilesHtml += `<div class="best-round-tile"><img src="${tile.img}" alt="${tile.name}"></div>`;
             }
         });
+        
         for (let i = 0; i < 2; i++) {
             tilesHtml += `<div class="best-round-tile joker"><img src="images/mahjong/lai.png" alt="赖"></div>`;
         }
 
-        
         return `
             <div class="best-round-item">
                 <div class="best-round-tiles">${tilesHtml}</div>
