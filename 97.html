@@ -1390,12 +1390,37 @@ const FAN_RULES = [
     {
         name: "断幺九",
         check: (selectedTiles) => {
+            if (chosenSkills.includes('s41')) return false;
             const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
             if (honors.length > 0) return false;
             const values = selectedTiles.map(t => t.value);
             return values.every(v => v >= 2 && v <= 8);
         },
         fan: 6,
+        hasAnimation: false
+    },
+    {
+        name: "死神的监视",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s41')) return false;
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return false;
+            const values = selectedTiles.map(t => t.value);
+            return values.every(v => v >= 2 && v <= 8);
+        },
+        fan: -999,
+        hasAnimation: false
+    },
+    {
+        name: "死神的监视",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s41')) return false;
+            const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
+            if (honors.length > 0) return true;
+            const values = selectedTiles.map(t => t.value);
+            return !values.every(v => v >= 2 && v <= 8);
+        },
+        fan: 24,
         hasAnimation: false
     },
     {
@@ -2292,6 +2317,17 @@ const FAN_RULES = [
         fan: 18,
         hasAnimation: false
     },
+    {
+        name: "盲人摸象",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s42')) return false;
+                
+            return true;
+            
+        },
+        fan: 32,
+        hasAnimation: false
+    }
 
 
 
@@ -2342,6 +2378,13 @@ const SKILLS = [
     { id: "s38", name: "水天一色", desc: "升级绿一色", bgColor: "#00AA00" },
     { id: 's39', name: '赤宝牌筒', desc: '获得赤宝牌筒', bgColor: '#FF0000' },
     { id: 's40', name: '赤宝牌条', desc: '获得赤宝牌条', bgColor: '#FF0000' },
+    { id: 's41', name: '《这个断幺九的可以替你去死了》', desc: '不断幺时获得24番。断幺时不获得分数', bgColor: '#AAAAAA' },
+    { 
+        id: 's42', 
+        name: '盲人摸象', 
+        desc: '♦♦♦♦♦♦♦♦♦。', 
+        bgColor: '#EEAAAA' // 灰色背景，可自定义
+    },
 
 
     { id: 's22', name: '四季发财', desc: '发字的发牌权重增加99999', bgColor: '#39D700' }
@@ -2405,7 +2448,7 @@ function init() {
         { id: 's5_red', name: '赤五条', type: '条', value: 5, img: 'images/mahjong/s5_red.png'}
     ];
 
-    chosenSkills = [ ];
+    chosenSkills = [  ];
     iceCreamMultiplier = 1.6;
     thickMultiplier = 1.1;
     pureMultiplier = 1.0;
@@ -2588,7 +2631,11 @@ function renderHand() {
             let tilesHtml = '<div class="tile-wrapper">';
             // 显示3张牌叠在一起的效果
             for (let i = 0; i < 3; i++) {
-                tilesHtml += `<div class="tile"><img src="${tile.img}" alt="${tile.name}"></div>`;
+                //tilesHtml += `<div class="tile"><img src="${tile.img}" alt="${tile.name}"></div>`;
+                // 检查是否选了 s42 技能，是则用背面图
+                const imgPath = chosenSkills.includes('s42') ? 'images/mahjong/back.png' : tile.img;
+                tilesHtml += `<div class="tile"><img src="${imgPath}" alt="${tile.name}"></div>`;
+
             }
             tilesHtml += '</div>';
             slot.innerHTML = tilesHtml;
@@ -2933,7 +2980,7 @@ function playRound() {
     currentMultiplier = Math.round(currentMultiplier * 100) / 100;
     if (currentMultiplier === 1.0) playClickSound(); 
     
-    
+    if (totalFan < 0) totalFan = 0;
     totalScore += Math.floor(totalFan * totalFan * currentMultiplier);
     document.getElementById('score').innerText = totalScore;
     
@@ -3008,7 +3055,11 @@ function showAnimation(rule, selectedTiles) {
     
     selectedTiles.forEach(tile => {
         for (let i = 0; i < 3; i++) {
-            tilesHtml += `<div class="animation-tile"><img src="${tile.img}" alt="${tile.name}"></div>`;
+            //tilesHtml += `<div class="animation-tile"><img src="${tile.img}" alt="${tile.name}"></div>`;
+            // 动画里的牌也同步变背面
+            const animImgPath = chosenSkills.includes('s42') ? 'images/mahjong/back.png' : tile.img;
+            tilesHtml += `<div class="animation-tile"><img src="${animImgPath}" alt="${tile.name}"></div>`;
+
         }
     });
     
