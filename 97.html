@@ -501,7 +501,7 @@ const FAN_RULES = [
     {
         name: "红孔雀",
         check: (selectedTiles) => {
-            const allowed = ['1条','5条','7条','9条','中'];
+            const allowed = ['1条','5条','赤五条','7条','9条','中'];
             return selectedTiles.every(t => allowed.includes(t.name));
         },
         fan: 48,
@@ -641,7 +641,7 @@ const FAN_RULES = [
         },
         fan: 24,
         hasAnimation: true,
-        textColor: "#999999",
+        textColor: "#999",
         glowColor: "#0000FF",
         bgColor: "#000011"
     },
@@ -660,7 +660,7 @@ const FAN_RULES = [
     {
         name: "中原一点红",
         check: (selectedTiles) => {
-            const allowed = ['1筒','3筒','5筒','6筒','7筒','9筒','中'];
+            const allowed = ['1筒','3筒','5筒','赤五筒','6筒','7筒','9筒','中'];
             return selectedTiles.every(t => allowed.includes(t.name));
         },
         fan: 24,
@@ -673,7 +673,7 @@ const FAN_RULES = [
         name: "纯正中原一点红",
         check: (selectedTiles) => {
             if (!chosenSkills.includes('s30')) return false;
-            const allowed = ['1筒','3筒','5筒','6筒','7筒','9筒'];
+            const allowed = ['1筒','3筒','5筒','赤五筒','6筒','7筒','9筒'];
             return selectedTiles.every(t => allowed.includes(t.name));
         },
         fan: 48,
@@ -1851,7 +1851,7 @@ const FAN_RULES = [
         name: "金孔雀",
         check: (selectedTiles) => {
             if (!chosenSkills.includes('s12')) return false;
-            const allowed = ['1条','5条','7条','9条','中'];
+            const allowed = ['1条','5条','赤五条','7条','9条','中'];
             return selectedTiles.every(t => allowed.includes(t.name));
         },
         fan: 88,
@@ -1981,7 +1981,7 @@ const FAN_RULES = [
     {
         name: "赤宝牌",
         check: (selectedTiles) => {
-            if (!chosenSkills.includes('s28')) return false;
+            if (!chosenSkills.includes('s28') && !chosenSkills.includes('s39') && !chosenSkills.includes('s40')) return false;
             const redCount = selectedTiles.filter(t =>
                 t.id === 'm5_red' ||
                 t.id === 'p5_red' ||
@@ -1989,13 +1989,13 @@ const FAN_RULES = [
             ).length;
             return redCount === 1;
         },
-        fan: 12,
+        fan: 24,
         hasAnimation: false,
     },
     {
         name: "赤宝牌",
         check: (selectedTiles) => {
-            if (!chosenSkills.includes('s28')) return false;
+            if (!chosenSkills.includes('s28') && !chosenSkills.includes('s39') && !chosenSkills.includes('s40')) return false;
             const redCount = selectedTiles.filter(t =>
                 t.id === 'm5_red' ||
                 t.id === 'p5_red' ||
@@ -2003,13 +2003,13 @@ const FAN_RULES = [
             ).length;
             return redCount === 2;
         },
-        fan: 24,
+        fan: 48,
         hasAnimation: false,
     },
     {
         name: "赤宝牌",
         check: (selectedTiles) => {
-            if (!chosenSkills.includes('s28')) return false;
+            if (!chosenSkills.includes('s28') && !chosenSkills.includes('s39') && !chosenSkills.includes('s40')) return false;
             const redCount = selectedTiles.filter(t =>
                 t.id === 'm5_red' ||
                 t.id === 'p5_red' ||
@@ -2017,14 +2017,14 @@ const FAN_RULES = [
             ).length;
             return redCount === 3;
         },
-        fan: 36,
+        fan: 72,
         hasAnimation: false,
     },    
     {
         name: "至尊丹青流彩",
         check: (selectedTiles) => {
             if (!chosenSkills.includes('s29')) return false;
-            const allowed = ['1条','5条','7条','9条','1筒','3筒','5筒','6筒','7筒','9筒'];
+            const allowed = ['1条','5条','赤五条','7条','9条','1筒','3筒','5筒','赤五筒','6筒','7筒','9筒'];
             return selectedTiles.every(t => allowed.includes(t.name));
         },
         fan: 32,
@@ -2072,7 +2072,6 @@ const FAN_RULES = [
     {
         name: "同色双龙会",
         check: (selectedTiles) => {
-            if (!chosenSkills.includes('s28')) return false;
             const suit = selectedTiles[0].type;
             if (!selectedTiles.every(t => t.type === suit)) return false;
             const vals = selectedTiles.map(t => t.value);
@@ -2175,8 +2174,8 @@ const SKILLS = [
     { id: 's24', name: '直冲云霄', desc: '番数大于120番时，分数×1.6', bgColor: '#87CEEB' },
     { id: 's25', name: '直达天际', desc: '番数大于180番时，分数×1.7', bgColor: '#9370DB' },
     { id: 's26', name: '成双成对', desc: '和对子玩一辈子吧', bgColor: '#32CD32' },
-    { id: 's27', name: '纯净主义', desc: '选的4张牌无字时倍率+0.05', bgColor: '#87CEEB' },
-    { id: 's28', name: '赤宝牌', desc: '五万五筒五条各加一张到牌组', bgColor: '#FF0000' },
+    { id: 's27', name: '纯净主义', desc: '选的4张牌断幺时倍率+0.05', bgColor: '#87CEEB' },
+    { id: 's28', name: '赤宝牌万', desc: '获得赤宝牌万', bgColor: '#FF0000' },
     { id: 's29', name: '至尊丹青流彩', desc: '解锁至尊丹青流彩', bgColor: '#DD9999'},
     // 在 SKILLS 数组中添加
     { id: 's30', name: '问鼎中原', desc: '解锁纯正中原一点红，打出得分+0.2倍', bgColor: '#8B0000' },
@@ -2188,6 +2187,8 @@ const SKILLS = [
     { id: "s36", name: "形单影只", desc: "升级全单", bgColor: "#888888" },
     { id: "s37", name: "对影成双", desc: "升级全双", bgColor: "#006400" },
     { id: "s38", name: "水天一色", desc: "升级绿一色", bgColor: "#00AA00" },
+    { id: 's39', name: '赤宝牌筒', desc: '获得赤宝牌筒', bgColor: '#FF0000' },
+    { id: 's40', name: '赤宝牌条', desc: '获得赤宝牌条', bgColor: '#FF0000' },
 
 
     { id: 's22', name: '四季发财', desc: '发字的发牌权重增加99999', bgColor: '#39D700' }
@@ -2199,7 +2200,7 @@ const SKILLS = [
 // 存储已选的技能ID
 let chosenSkills = [];      // 已选技能ID
 let lastRemainingTiles = []; // 上一轮剩下的牌
-let weights = new Array(34).fill(100); // 34张牌，初始权重100
+let weights = new Array(99).fill(100); // 34张牌，初始权重100
 let isAllInActive = false;
 
 // 初始化
@@ -2712,9 +2713,9 @@ function playRound() {
 // 在 playRound 函数中，计算番型前添加
     if (chosenSkills.includes('s27')) {
         const selectedTiles = selectedIndices.map(i => hand[i]);
-        const hasNoHonor = selectedTiles.every(t => t.type !== '风' && t.type !== '箭');
-        const isAllHonor = selectedTiles.every(t => t.type === '风' || t.type === '箭');
-        if (hasNoHonor || isAllHonor) {
+        const hasNoHonor = selectedTiles.every(t => t.type !== '风' && t.type !== '箭' && t.value > 1 && t.value < 9);
+        
+        if (hasNoHonor) {
             pureMultiplier += 0.05;
         }
         // 在应用倍数的地方添加
@@ -2936,8 +2937,18 @@ function chooseSkill(skillId) {
     }
     if (skillId === 's28') {
         deck.push(
-            { id: 'm5_red', name: '赤五万', type: '万', value: 5, img: 'images/mahjong/m5_red.png'},
-            { id: 'p5_red', name: '赤五筒', type: '筒', value: 5, img: 'images/mahjong/p5_red.png'},
+            { id: 'm5_red', name: '赤五万', type: '万', value: 5, img: 'images/mahjong/m5_red.png'}
+        );
+        shuffle(deck);
+    }
+    if (skillId === 's39') {
+        deck.push(
+            { id: 'p5_red', name: '赤五筒', type: '筒', value: 5, img: 'images/mahjong/p5_red.png'}
+        );
+        shuffle(deck);
+    }
+    if (skillId === 's40') {
+        deck.push(
             { id: 's5_red', name: '赤五条', type: '条', value: 5, img: 'images/mahjong/s5_red.png'}
         );
         shuffle(deck);
