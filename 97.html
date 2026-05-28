@@ -409,17 +409,17 @@ function playMultiplierNormal() {
 // 4️⃣ 得分倍率 3-10（良好）
 function playMultiplierGood() {
     initAudioOnce();
-    playBeep(500, 0.1, 'triangle', 0.3);
-    setTimeout(() => playBeep(800, 0.15, 'triangle', 0.4), 80);
-    setTimeout(() => playBeep(1200, 0.2, 'triangle', 0.3), 160);
+    playBeep(500, 0.1, 'triangle', 0.15);
+    setTimeout(() => playBeep(800, 0.15, 'triangle', 0.2), 80);
+    setTimeout(() => playBeep(1200, 0.2, 'triangle', 0.15), 160);
 }
 
 // 5️⃣ 得分倍率 10-100（优秀）
 function playMultiplierGreat() {
     initAudioOnce();
-    playBeep(600, 0.1, 'square', 0.4);
-    setTimeout(() => playBeep(900, 0.15, 'square', 0.5), 50);
-    setTimeout(() => playBeep(1200, 0.2, 'square', 0.4), 120);
+    playBeep(600, 0.1, 'square', 0.2);
+    setTimeout(() => playBeep(900, 0.15, 'square', 0.25), 50);
+    setTimeout(() => playBeep(1200, 0.2, 'square', 0.2), 120);
     playWhiteNoise(0.3, 0.08);
 }
 
