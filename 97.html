@@ -349,6 +349,156 @@ body {
 
 <script>
 // ======================================================
+// 音频系统 - 6个独立音效函数
+// ======================================================
+let audioCtx = null;
+let audioReady = false;
+
+// 初始化音频（只需要调用一次）
+function initAudioOnce() {
+    if (audioReady) return;
+    try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        audioReady = true;
+    } catch (e) {
+        console.log("音频不支持");
+    }
+}
+
+// 通用播放函数
+function playBeep(freq, duration, waveType = 'sine', vol = 0.3) {
+    if (!audioReady) return;
+    
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.frequency.value = freq;
+    osc.type = waveType;
+    
+    const now = audioCtx.currentTime;
+    gain.gain.setValueAtTime(vol, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+    
+    osc.start(now);
+    osc.stop(now + duration);
+}
+// 1️⃣ 点击音效（按钮、选牌）
+function playClickSound() {
+    initAudioOnce();
+    playBeep(900, 0.04, 'sine', 0.2);
+    setTimeout(() => playBeep(700, 0.03, 'sine', 0.15), 20);
+}
+
+// 2️⃣ 得分倍率 < 1（负面效果）
+function playMultiplierBad() {
+    initAudioOnce();
+    playBeep(200, 0.3, 'sawtooth', 0.4);
+    setTimeout(() => playBeep(150, 0.4, 'sawtooth', 0.3), 150);
+}
+
+// 3️⃣ 得分倍率 1-3（普通）
+function playMultiplierNormal() {
+    initAudioOnce();
+    playBeep(400, 0.15, 'sine', 0.3);
+    setTimeout(() => playBeep(600, 0.15, 'sine', 0.3), 120);
+}
+
+// 4️⃣ 得分倍率 3-10（良好）
+function playMultiplierGood() {
+    initAudioOnce();
+    playBeep(500, 0.1, 'triangle', 0.3);
+    setTimeout(() => playBeep(800, 0.15, 'triangle', 0.4), 80);
+    setTimeout(() => playBeep(1200, 0.2, 'triangle', 0.3), 160);
+}
+
+// 5️⃣ 得分倍率 10-100（优秀）
+function playMultiplierGreat() {
+    initAudioOnce();
+    playBeep(600, 0.1, 'square', 0.4);
+    setTimeout(() => playBeep(900, 0.15, 'square', 0.5), 50);
+    setTimeout(() => playBeep(1200, 0.2, 'square', 0.4), 120);
+    playWhiteNoise(0.3, 0.08);
+}
+
+// 6️⃣ 得分倍率 100+（史诗）
+function playMultiplierEpic() {
+    initAudioOnce();
+    const notes = [400, 500, 600, 800, 1000, 1200, 1500];
+    notes.forEach((freq, i) => {
+        setTimeout(() => {
+            playBeep(freq, 0.3, 'sawtooth', 0.3);
+        }, i * 80);
+    });
+    playWhiteNoise(1.0, 0.12);
+}
+// 🌬️ 番型动画音效：一股风声（所有番型通用）
+// 🌬️ 最舒服的风声（先小后大再小）
+function playFanWindSound() {
+    initAudioOnce();
+
+    const duration = 1.2;
+    const bufferSize = audioCtx.sampleRate * duration;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = buffer.getChannelData(0);
+
+    for (let i = 0; i < bufferSize; i++) {
+        const t = i / audioCtx.sampleRate;
+        output[i] =
+            (Math.random() * 2 - 1) * 0.6 +
+            Math.sin(t * 25) * 0.4;
+    }
+
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 700;
+
+    const gain = audioCtx.createGain();
+    const now = audioCtx.currentTime;
+    
+    // 温柔的包络
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.linearRampToValueAtTime(0.6, now + 0.35);
+    gain.gain.linearRampToValueAtTime(0.1, now + 0.8);
+
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    source.start();
+}
+
+
+// 播放白噪音
+function playWhiteNoise(duration, vol = 0.1) {
+    if (!audioReady) return;
+    
+    const bufferSize = audioCtx.sampleRate * duration;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = buffer.getChannelData(0);
+    
+    for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+    }
+    
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    
+    const gain = audioCtx.createGain();
+    gain.gain.value = vol;
+    
+    source.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    source.start();
+}
+
+// ======================================================
 // 配置区 - 牌库定义（已注入图片路径）
 // ======================================================
 
@@ -2268,6 +2418,11 @@ function init() {
     resetDeck();
     updateDisplay();
     dealFirstRound();
+    document.body.addEventListener('click', initAudioOnce, { once: true });
+    
+    resetDeck();
+    updateDisplay();
+    dealFirstRound();
 }
 
 // 智能选牌（简化版）
@@ -2447,6 +2602,7 @@ function renderHand() {
 
 // 切换选择
 function toggleSelect(index) {
+    playClickSound(); 
     const tile = hand[index];
     if (tile === null) return;
     
@@ -2466,6 +2622,7 @@ function toggleSelect(index) {
 }
 function smartSelect() {
     // 获取非空手牌
+    playClickSound(); 
     const validCards = hand
         .map((tile, index) => ({ tile, index }))
         .filter(item => item.tile !== null);
@@ -2606,6 +2763,7 @@ function clearPreview() {
 
 // 确认选择
 function confirmSelection() {
+    playClickSound(); 
     if (selectedIndices.length === 4) {
         document.getElementById('playBtn').disabled = false;
     }
@@ -2613,6 +2771,7 @@ function confirmSelection() {
 
 // 打出牌
 function playRound() {
+
     if (selectedIndices.length !== 4) return;
     
     const selectedTiles = selectedIndices.map(i => hand[i]);
@@ -2770,7 +2929,11 @@ function playRound() {
         currentMultiplier *= wanJianQiFaMultiplier;
     }
     if (kaifazhemoshi) currentMultiplier *= Math.random()*66666;
+    
     currentMultiplier = Math.round(currentMultiplier * 100) / 100;
+    if (currentMultiplier === 1.0) playClickSound(); 
+    
+    
     totalScore += Math.floor(totalFan * totalFan * currentMultiplier);
     document.getElementById('score').innerText = totalScore;
     
@@ -2786,6 +2949,7 @@ function playRound() {
     
     if (bestRule && bestRule.hasAnimation) {
         showAnimation(bestRule, selectedTiles);
+        
     } else {
         nextRound();
     }
@@ -2793,6 +2957,17 @@ function playRound() {
 // 显示倍率动画
 function showMultiplierAnimation(multiplier) {
     // 创建动画元素
+    if (multiplier <= 1) {
+        playMultiplierBad();
+    } else if (multiplier < 3) {
+        playMultiplierNormal();
+    } else if (multiplier < 10) {
+        playMultiplierGood();
+    } else if (multiplier < 100) {
+        playMultiplierGreat();
+    } else {
+        playMultiplierEpic();
+    }
     const animEl = document.createElement('div');
     animEl.innerText = `×${multiplier}`;
     animEl.style.cssText = `
@@ -2844,7 +3019,13 @@ function showAnimation(rule, selectedTiles) {
     
     tilesContainer.innerHTML = tilesHtml;
     
-    textElement.innerText = rule.name;
+    textElement.innerText = rule.name; //动画声音
+    if (rule.name === '大四喜' ) playFanWindSound();
+    else playFanWindSound();
+    
+    
+    
+    
     textElement.style.color = rule.textColor;
     textElement.style.textShadow = `0 0 15px ${rule.glowColor}`;
     
