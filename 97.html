@@ -548,6 +548,8 @@ const TILES = [
 ];
 
 // 游戏状态
+let skillRounds = [8, 12, 18, 22, 28, 32, 38, 42, 48, 52, 58, 62, 68, 72, 78, 82, 88, 92, 98];
+    
 let deck = [];
 let hand = [];
 let selectedIndices = [];
@@ -559,6 +561,9 @@ let thickMultiplier = 1.0;
 let menFeng = '东';
 let quanFeng = '东';
 let iceCreamMultiplier = 1.6;
+let firePowerRound = -1;      // 火之力：记录选技能时的轮数
+let icePowerCount = 0;        // 冰之力：剩余生效轮数
+
 // 游戏状态变量区域添加
 let hasAddedRedTiles = false; // 是否已添加赤宝牌
 let pureZhongyuanMultiplier = 1.0; // 纯正中原一点红倍率
@@ -2564,9 +2569,8 @@ const SKILLS = [
     { id: 's45', name: '七星连珠', desc: '解锁七星系列番型。', bgColor: '#00008B' },
     { id: 's46', name: '独中三元', desc: '打出大三元时倍率x1.7', bgColor: '#FFD700' },
     { id: 's47', name: '四喜临门', desc: '打出大四喜时倍率x1.8', bgColor: '#FF0000' },
-
-
-
+    { id: 's48', name: '冰之力', desc: '接下来3轮轮次数不变', bgColor: '#87CEEB' },
+    { id: 's49', name: '冰与火之力', desc: '融合冰之力与火之力，获得两者的叠加效果', bgColor: '#FF4500' }, // 橙红色
 
     { id: 's22', name: '四季发财', desc: '发字的发牌权重增加99999', bgColor: '#39D700' }
 
@@ -2578,14 +2582,16 @@ const SKILLS = [
 let chosenSkills = [];      // 已选技能ID
 let lastRemainingTiles = []; // 上一轮剩下的牌
 let weights = new Array(99).fill(100); // 34张牌，初始权重100
-let isAllInActive = false;
+
 
 // 初始化
 function init() {
     hehutime = 0;
-
+    firePowerRound = -1; 
     wanJianQiFaMultiplier = 1.0;
     hasAddedRedTiles = false; 
+    skillRounds = [8, 12, 18, 22, 28, 32, 38, 42, 48, 52, 58, 62, 68, 72, 78, 82, 88, 92, 98];
+    
     pureZhongyuanMultiplier = 1;
     const deck = [
         // 万子
@@ -3150,10 +3156,11 @@ function playRound() {
         }
     }
     // 技能17：ALL IN（仅限选技能这一轮，得分×2）
-    if (chosenSkills.includes('s17') && isAllInActive) {
+        // 技能17：火之力（仅当选技能的那一轮生效）
+    if (chosenSkills.includes('s17') && firePowerRound === round) {
         currentMultiplier *= 4;
-        isAllInActive = false; // 用完立即失效
     }
+
     if (chosenSkills.includes('s20')) {
         currentMultiplier *= thickMultiplier;
         if (totalFan < 2) {
@@ -3363,10 +3370,15 @@ function showAnimation(rule, selectedTiles) {
 
 // 下一轮
 function nextRound() {
-    round++;
-    if (round > 100) {
-        showResult();
-        return;
+    if (icePowerCount > 0) {
+        icePowerCount--;
+        // 不增加round
+    } else {
+        round++;
+        if (round > 100) {
+            showResult();
+            return;
+        }
     }
     // 每10轮检查分数要求
     if (round % 10 === 0) {
@@ -3387,10 +3399,12 @@ function nextRound() {
         }
     }
     // ✅ 第 2、5、8 轮停住，选技能
-    const skillRounds = [8, 12, 18, 22, 28, 32, 38, 42, 48, 52, 58, 62, 68, 72, 78, 82, 88, 92, 98];
     
     if (skillRounds.includes(round)) {
         showSkillModal();
+        const idx = skillRounds.indexOf(round);
+        if (idx > -1) skillRounds.splice(idx, 1);
+    
         return; // 这里停下，不再往下走
     }
 
@@ -3415,7 +3429,20 @@ function showSkillModal() {
 
     // ✅ 过滤掉已经选过的技能
     const availableSkills = SKILLS.filter(skill => !chosenSkills.includes(skill.id));
-
+    // ✅ 检查是否已同时拥有火之力(s17)和冰之力(s48)
+    const hasFireAndIce = chosenSkills.includes('s17') && chosenSkills.includes('s48');
+    
+    // ✅ 如果已拥有火之力和冰之力，则添加冰与火之力(s49)到可选技能池
+    if (hasFireAndIce) {
+        // 确保s49还没被选过
+        if (!chosenSkills.includes('s49')) {
+            // 在SKILLS数组中添加s49的定义（需要在SKILLS数组中预先定义）
+            const iceFireSkill = SKILLS.find(skill => skill.id === 's49');
+            if (iceFireSkill) {
+                availableSkills.push(iceFireSkill);
+            }
+        }
+    }
     // 如果可选技能不足3个，就全部显示（一般不会发生）
     const shuffled = [...availableSkills].sort(() => 0.5 - Math.random());
     const threeSkills = shuffled.slice(0, Math.min(3, shuffled.length));
@@ -3451,8 +3478,11 @@ function chooseSkill(skillId) {
     // ✅ 记录已选技能
     chosenSkills.push(skillId);
     
-    if (skillId === 's17') {
-        isAllInActive = true;
+    if (skillId === 's17' || skillId === 's49') {
+        firePowerRound = round;  // 记录选技能时的轮数
+    }
+    if (skillId === 's48' || skillId === 's49') {
+        icePowerCount = 3;       // 接下来3轮轮次数不变
     }
     
     const listEl = document.getElementById('chosenSkillsList');
