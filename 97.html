@@ -2603,7 +2603,7 @@ const FAN_RULES = [
         check: (selectedTiles) => {
             const hasAutumn = selectedTiles.some(t => t.type === '风' && t.name === '秋');
             const hasZhong = selectedTiles.some(t => t.type === '箭' && t.name === '中');
-            const oneTong = selectedTiles.filter(t => t.type === '筒' && t.name === '1').length === 1;
+            const oneTong = selectedTiles.filter(t => t.type === '筒' && t.value === 1).length === 1;
             const tongCount = selectedTiles.filter(t => t.type === '筒').length;
             return hasAutumn && hasZhong && oneTong && tongCount === 2 && selectedTiles.length === 4;
         },
