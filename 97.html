@@ -568,6 +568,8 @@ let wanJianQiFaMultiplier = 1.0;
 const SCORE_REQUIREMENTS = [0,10000, 30000, 60000, 100000, 160000, 250000, 400000, 700000, 1500000, 3000000, 6000000];
 // 在游戏状态变量区域添加
 let pureMultiplier = 1.0; // 纯净主义倍率
+let hehutime = 0; // 记录和胡与清和胡的触发次数
+
 
 const FAN_RULES = [
     // ===== 原有番型 =====
@@ -1420,7 +1422,7 @@ const FAN_RULES = [
             const values = selectedTiles.map(t => t.value);
             return !values.every(v => v >= 2 && v <= 8);
         },
-        fan: 24,
+        fan: 18,
         hasAnimation: false
     },
     {
@@ -1598,6 +1600,118 @@ const FAN_RULES = [
         bgColor: "#221100"
     },
     {
+        name: "暗广",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s43')) return false;
+            // 1. 筛选数字牌（排除风箭牌）
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            if (numbers.length !== 4) return false;
+           
+            // 2. 按花色分组
+            const groups = {};
+            numbers.forEach(t => {
+                if (!groups[t.type]) groups[t.type] = [];
+                groups[t.type].push(t.value);
+            });
+            
+            // 3. 必须恰好有两种花色
+            const types = Object.keys(groups);
+            if (types.length !== 2) return false;
+            
+            // 4. 检查每种花色的两张牌
+            const [type1, type2] = types;
+            const group1 = groups[type1].sort((a, b) => a - b);
+            const group2 = groups[type2].sort((a, b) => a - b);
+            
+            // 5. 检查第一种花色是否是1和3，第二种是否是7和8（或反过来）
+            const isGroup1Valid = (group1[0] === 1 && group1[1] === 3);
+            const isGroup2Valid = (group2[0] === 7 && group2[1] === 8);
+            
+            const isGroup1ValidAlt = (group1[0] === 7 && group1[1] === 8);
+            const isGroup2ValidAlt = (group2[0] === 1 && group2[1] === 3);
+            
+            // 6. 返回结果：要么第一种是1和3，第二种是7和8；要么反过来
+            return (isGroup1Valid && isGroup2Valid) || (isGroup1ValidAlt && isGroup2ValidAlt);
+        },
+        fan: 91,
+        hasAnimation: false,
+    },
+    {
+        name: "暗广",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s43')) return false;
+            // 1. 筛选数字牌（排除风箭牌）
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            if (numbers.length !== 4) return false;
+           
+            // 2. 按花色分组
+            const groups = {};
+            numbers.forEach(t => {
+                if (!groups[t.type]) groups[t.type] = [];
+                groups[t.type].push(t.value);
+            });
+            
+            // 3. 必须恰好有两种花色
+            const types = Object.keys(groups);
+            if (types.length !== 2) return false;
+            
+            // 4. 检查每种花色的两张牌
+            const [type1, type2] = types;
+            const group1 = groups[type1].sort((a, b) => a - b);
+            const group2 = groups[type2].sort((a, b) => a - b);
+            
+            // 5. 检查第一种花色是否是1和3，第二种是否是7和8（或反过来）
+            const isGroup1Valid = (group1[0] === 1 && group1[1] === 3);
+            const isGroup2Valid = (group2[0] === 1 && group2[1] === 9);
+            
+            const isGroup1ValidAlt = (group1[0] === 1 && group1[1] === 9);
+            const isGroup2ValidAlt = (group2[0] === 1 && group2[1] === 3);
+            
+            // 6. 返回结果：要么第一种是1和3，第二种是7和8；要么反过来
+            return (isGroup1Valid && isGroup2Valid) || (isGroup1ValidAlt && isGroup2ValidAlt);
+        },
+        fan: 78,
+        hasAnimation: false,
+    },
+    {
+        name: "暗广",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s43')) return false;
+            // 1. 筛选数字牌（排除风箭牌）
+            const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+            if (numbers.length !== 4) return false;
+           
+            // 2. 按花色分组
+            const groups = {};
+            numbers.forEach(t => {
+                if (!groups[t.type]) groups[t.type] = [];
+                groups[t.type].push(t.value);
+            });
+            
+            // 3. 必须恰好有两种花色
+            const types = Object.keys(groups);
+            if (types.length !== 2) return false;
+            
+            // 4. 检查每种花色的两张牌
+            const [type1, type2] = types;
+            const group1 = groups[type1].sort((a, b) => a - b);
+            const group2 = groups[type2].sort((a, b) => a - b);
+            
+            // 5. 检查第一种花色是否是1和3，第二种是否是7和8（或反过来）
+            const isGroup1Valid = (group1[0] === 1 && group1[1] === 9);
+            const isGroup2Valid = (group2[0] === 7 && group2[1] === 8);
+            
+            const isGroup1ValidAlt = (group1[0] === 7 && group1[1] === 8);
+            const isGroup2ValidAlt = (group2[0] === 1 && group2[1] === 9);
+            
+            // 6. 返回结果：要么第一种是1和3，第二种是7和8；要么反过来
+            return (isGroup1Valid && isGroup2Valid) || (isGroup1ValidAlt && isGroup2ValidAlt);
+        },
+        fan: 13,
+        hasAnimation: false,
+    },
+    
+    {
         name: "混双",
         check: (selectedTiles) => {
             const honors = selectedTiles.filter(t => t.type === '风' || t.type === '箭');
@@ -1689,7 +1803,7 @@ const FAN_RULES = [
             }
             return false;
         },
-        fan: 3,
+        fan: 6,
         hasAnimation: false
     },
     {
@@ -1729,7 +1843,7 @@ const FAN_RULES = [
             }
             return false;
         },
-        fan: 8,
+        fan: 6,
         hasAnimation: false
     },
     {
@@ -1844,6 +1958,8 @@ const FAN_RULES = [
         name: "小七星",
         check: (selectedTiles, hand) => {
             // 1. 选的4张全是字牌
+            if (!chosenSkills.includes('s45')) return false;
+        
             const allSelectedAreHonor = selectedTiles.every(t => t.type === '风' || t.type === '箭');
             if (!allSelectedAreHonor) return false;
 
@@ -1851,7 +1967,7 @@ const FAN_RULES = [
             const honorCount = hand.filter(t => t.type === '风' || t.type === '箭').length;
             return honorCount === 5;
         },
-        fan: 16,
+        fan: 24,
         hasAnimation: true,
         textColor: "#87CEEB",  // 浅蓝色
         glowColor: "#00BFFF",
@@ -1860,6 +1976,8 @@ const FAN_RULES = [
     {
         name: "大七星",
         check: (selectedTiles, hand) => {
+            if (!chosenSkills.includes('s45')) return false;
+        
             // 1. 选的4张全是字牌
             const allSelectedAreHonor = selectedTiles.every(t => t.type === '风' || t.type === '箭');
             if (!allSelectedAreHonor) return false;
@@ -1877,6 +1995,8 @@ const FAN_RULES = [
     {
         name: "巨七星",
         check: (selectedTiles, hand) => {
+            if (!chosenSkills.includes('s45')) return false;
+        
             // 1. 选的4张全是字牌
             const allSelectedAreHonor = selectedTiles.every(t => t.type === '风' || t.type === '箭');
             if (!allSelectedAreHonor) return false;
@@ -1895,6 +2015,9 @@ const FAN_RULES = [
         name: "九莲宝灯",
         check: (selectedTiles, hand) => {
             // 1. 选的4张必须同色
+            if (!chosenSkills.includes('s33')) return false;
+
+ 
             const selectedTypes = selectedTiles.map(t => t.type);
             if (!selectedTypes.every(t => t === selectedTypes[0])) return false;
             const color = selectedTypes[0];
@@ -1912,15 +2035,18 @@ const FAN_RULES = [
             const otherCards = hand.filter(t => t.type !== color || t.type === '风' || t.type === '箭');
             return otherCards.length === 1;
         },
-        fan: 64,
+        fan: 88,
         hasAnimation: true,
         textColor: "#9370DB",  // 紫色
         glowColor: "#8A2BE2",
-        bgColor: "#1A0F2A"
+        bgColor: "#AA4A9A"
     },
     {
         name: "纯正九莲宝灯",
         check: (selectedTiles, hand) => {
+            if (!chosenSkills.includes('s33')) return false;
+
+ 
             // 1. 手牌8张必须全是同一花色
             const types = hand.map(t => t.type);
             if (!types.every(t => t === types[0])) return false;
@@ -1935,11 +2061,11 @@ const FAN_RULES = [
             
             return has1 && has9;
         },
-        fan: 128,
+        fan: 168,
         hasAnimation: true,
         textColor: "#9932CC",  // 暗紫色
         glowColor: "#9400D3",
-        bgColor: "#1A0A1A"
+        bgColor: "#AA8A9A"
     },
     {
         name: "国士无双",
@@ -1967,7 +2093,7 @@ const FAN_RULES = [
     {
         name: "国士无双十三面",
         check: (selectedTiles, hand) => {
-            if (!chosenSkills.includes('s33')) return false;
+            if (!chosenSkills.includes('s32')) return false;
             // 允许的幺九牌和字牌
             const allowed = [
                 '1万','9万','1筒','9筒','1条','9条',
@@ -2241,7 +2367,7 @@ const FAN_RULES = [
             const values = wanTiles.map(t => t.value).sort((a,b)=>a-b);
             return values[0] + 1 === values[1] && values[1] + 1 === values[2];
         },
-        fan: 32,
+        fan: 48,
         hasAnimation: true,
         textColor: "#87CEEB",
         glowColor: "#00BFFF",
@@ -2325,9 +2451,55 @@ const FAN_RULES = [
             return true;
             
         },
-        fan: 32,
+        fan: 24,
+        hasAnimation: false
+    },
+    {
+        name: "小学文凭",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s44')) return false;
+            return hehutime >= 0 && hehutime < 6;
+        },
+        fan: 6,
+        hasAnimation: false
+    },
+    {
+        name: "初中文凭",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s44')) return false;
+            return hehutime >= 6 && hehutime < 12;
+        },
+        fan: 12,
+        hasAnimation: false
+    },
+    {
+        name: "高中文凭",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s44')) return false;
+            return hehutime >= 12 && hehutime < 18;
+        },
+        fan: 18,
+        hasAnimation: false
+    },
+    {
+        name: "大学文凭",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s44')) return false;
+            return hehutime >= 18 && hehutime < 24;
+        },
+        fan: 24,
+        hasAnimation: false
+    },
+    {
+        name: "毕业证书",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s44')) return false;
+            return hehutime >= 24;
+        },
+        fan: 30,
         hasAnimation: false
     }
+
 
 
 
@@ -2350,18 +2522,19 @@ const SKILLS = [
     { id: 's10', name: '终极暴击', desc: '获得的分数×0.8或×1.6', bgColor: '#c0392b' },
     { id: 's11', name: '天堂地狱', desc: '获得的分数×0.4或×2.0', bgColor: '#9b59b6' },
     { id: 's12', name: '金孔雀', desc: '红孔雀升级为金孔雀', bgColor: '#FFD700' },
+    { id: 's13', name: '直奔月球', desc: '番数大于200番时，分数×1.8', bgColor: '#DDAADD' },
     { id: 's14', name: '顶胡升级', desc: '番数大于75番时，得分×1.4', bgColor: '#9b59b6' },
     { id: 's15', name: '超顶胡升级', desc: '番数大于90番时，得分×1.5', bgColor: '#c0392b' },
     { id: 's16', name: '断幺能手', desc: '手中8张牌无1、9和字牌时，得分×2.5', bgColor: '#FF8C00' },
-    { id: 's17', name: 'ALL IN', desc: '这一轮得分×3', bgColor: '#8B0000' },
+    { id: 's17', name: '火之力', desc: '这一轮得分×4', bgColor: '#8B0000' },
     { id: 's18', name: '三生寰宇', desc: '升级三生万物为三生寰宇', bgColor: '#4B0082' },
     // 技能定义
     { id: 's19', name: '万里白杨', desc: '万的清一色番型升级', bgColor: '#AAAAAA' },
-    { id: 's20', name: '厚积薄发', desc: '番数为1时每轮+0.1倍率（无限叠加）', bgColor: '#9370DB' },
+    { id: 's20', name: '厚积薄发', desc: '番数小于2时每轮+0.1倍率（无限叠加）', bgColor: '#9370DB' },
     { id: 's21', name: '冰激凌', desc: '得分×1.6，每轮-0.02，打出东北黑水寒重置', bgColor: '#3498db' },
     { id: 's23', name: '门冲煞', desc: '你不会在门圈一致时拿到这张牌，x1.8，平时x0.8', bgColor: '#8B4513' },
     { id: 's24', name: '直冲云霄', desc: '番数大于120番时，分数×1.6', bgColor: '#87CEEB' },
-    { id: 's25', name: '直达天际', desc: '番数大于180番时，分数×1.7', bgColor: '#9370DB' },
+    { id: 's25', name: '直达天际', desc: '番数大于160番时，分数×1.7', bgColor: '#9370DB' },
     { id: 's26', name: '成双成对', desc: '和对子玩一辈子吧', bgColor: '#32CD32' },
     { id: 's27', name: '纯净主义', desc: '选的4张牌断幺时倍率+0.05', bgColor: '#87CEEB' },
     { id: 's28', name: '赤宝牌万', desc: '获得赤宝牌万', bgColor: '#FF0000' },
@@ -2370,21 +2543,29 @@ const SKILLS = [
     { id: 's30', name: '问鼎中原', desc: '解锁纯正中原一点红，打出得分+0.2倍', bgColor: '#8B0000' },
     { id: 's31', name: '百发百中', desc: '选牌全为456数字牌时得分×1.6', bgColor: '#4169E1' },
     { id: 's32', name: '国士无双', desc:'获得新番型国士无双', bgColor: '#917813' },
-    { id: 's33', name: '国士无双十三面', desc:'获得新番型国士无双十三面', bgColor: '#911378' },
-    { id: 's34', name: '万箭齐发', desc: '解锁番型万箭齐发，每打出一次倍率+0.2', bgColor: '#87CEEB' },
+    { id: 's33', name: '九莲宝灯', desc: '解锁番型九莲宝灯。', bgColor: '#FFC0CB' },
+
+    { id: 's34', name: '万箭齐发', desc: '解锁番型万箭齐发，每打出一次倍率+0.1', bgColor: '#87CEEB' },
     { id: 's35', name: '硬碰硬', desc: '升级碰碰胡为硬碰硬（18番）', bgColor: '#D8BFD8' }, // 浅紫色
     { id: "s36", name: "形单影只", desc: "升级全单", bgColor: "#888888" },
     { id: "s37", name: "对影成双", desc: "升级全双", bgColor: "#006400" },
     { id: "s38", name: "水天一色", desc: "升级绿一色", bgColor: "#00AA00" },
     { id: 's39', name: '赤宝牌筒', desc: '获得赤宝牌筒', bgColor: '#FF0000' },
     { id: 's40', name: '赤宝牌条', desc: '获得赤宝牌条', bgColor: '#FF0000' },
-    { id: 's41', name: '《这个断幺九的可以替你去死了》', desc: '不断幺时获得24番。断幺时不获得分数', bgColor: '#AAAAAA' },
+    { id: 's41', name: '《这个断幺九的可以替你去死了》', desc: '不断幺时获得18番。断幺时不获得分数', bgColor: '#AAAAAA' },
     { 
         id: 's42', 
         name: '盲人摸象', 
         desc: '♦♦♦♦♦♦♦♦♦。', 
         bgColor: '#EEAAAA' // 灰色背景，可自定义
     },
+    { id: 's43', name: '暗广能手', desc: '你已急哭.cc', bgColor: '#139178' },
+    { id: 's44', name: '毕业文凭', desc: '学会加法（和胡与清和胡）来提升文凭。', bgColor: '#0000FF' },
+    { id: 's45', name: '七星连珠', desc: '解锁七星系列番型。', bgColor: '#00008B' },
+    { id: 's46', name: '独中三元', desc: '打出大三元时倍率x2', bgColor: '#FFD700' },
+    { id: 's47', name: '四喜临门', desc: '打出大四喜时倍率x2', bgColor: '#FF0000' },
+
+
 
 
     { id: 's22', name: '四季发财', desc: '发字的发牌权重增加99999', bgColor: '#39D700' }
@@ -2401,6 +2582,8 @@ let isAllInActive = false;
 
 // 初始化
 function init() {
+    hehutime = 0;
+
     wanJianQiFaMultiplier = 1.0;
     hasAddedRedTiles = false; 
     pureZhongyuanMultiplier = 1;
@@ -2448,7 +2631,7 @@ function init() {
         { id: 's5_red', name: '赤五条', type: '条', value: 5, img: 'images/mahjong/s5_red.png'}
     ];
 
-    chosenSkills = [  ];
+    chosenSkills = [ ]; //kaifa
     iceCreamMultiplier = 1.6;
     thickMultiplier = 1.1;
     pureMultiplier = 1.0;
@@ -2843,7 +3026,72 @@ function playRound() {
             }
         }
     });
+        // 仅当选了s44技能时，手动判断是否满足和胡或清和胡
+    if (chosenSkills.includes('s44')) {
+        const selectedTiles = selectedIndices.map(i => hand[i]);
+        const numbers = selectedTiles.filter(t => t.type !== '风' && t.type !== '箭');
+        
+        // 判断和胡：任意3张不同色数字牌，存在a+b=c
+        let isHehu = false;
+        if (numbers.length >= 3) {
+            for (let i = 0; i < numbers.length; i++) {
+                for (let j = i + 1; j < numbers.length; j++) {
+                    for (let k = j + 1; k < numbers.length; k++) {
+                        const a = numbers[i].value;
+                        const b = numbers[j].value;
+                        const c = numbers[k].value;
+                        const types = new Set([numbers[i].type, numbers[j].type, numbers[k].type]);
+                        if (types.size === 3 && (a === b + c || b === a + c || c === a + b)) {
+                            isHehu = true;
+                            break;
+                        }
+                    }
+                    if (isHehu) break;
+                }
+                if (isHehu) break;
+            }
+        }
+        
+        // 判断清和胡：同色3张数字牌，存在a+b=c
+        let isQinghehu = false;
+        if (numbers.length >= 3) {
+            const byType = {};
+            numbers.forEach(tile => {
+                if (!byType[tile.type]) byType[tile.type] = [];
+                byType[tile.type].push(tile.value);
+            });
+            for (const type in byType) {
+                const values = byType[type];
+                if (values.length >= 3) {
+                    for (let i = 0; i < values.length; i++) {
+                        for (let j = i + 1; j < values.length; j++) {
+                            for (let k = j + 1; k < values.length; k++) {
+                                const a = values[i];
+                                const b = values[j];
+                                const c = values[k];
+                                if (a === b + c || b === a + c || c === a + b) {
+                                    isQinghehu = true;
+                                    break;
+                                }
+                            }
+                            if (isQinghehu) break;
+                        }
+                        if (isQinghehu) break;
+                    }
+                }
+                if (isQinghehu) break;
+            }
+        }
+        
+        if (isHehu || isQinghehu) {
+            hehutime++;
+        }
+    }
+
     
+
+
+
     if (totalFan === 0) {
         const baseRule = FAN_RULES.find(r => r.name === "碰碰胡");
         totalFan = baseRule.fan;
@@ -2878,6 +3126,9 @@ function playRound() {
     if (chosenSkills.includes('s11')) {
         currentMultiplier *= Math.random() < 0.5 ? 0.4 : 2.0;
     }
+    if (chosenSkills.includes('s13') && totalFan > 200) {
+        currentMultiplier *= 1.8;
+    }
     // 技能14：顶胡升级（番数>75时，得分×1.4）
     if (chosenSkills.includes('s14') && totalFan > 75) {
         currentMultiplier *= 1.4;
@@ -2900,7 +3151,7 @@ function playRound() {
     }
     // 技能17：ALL IN（仅限选技能这一轮，得分×2）
     if (chosenSkills.includes('s17') && isAllInActive) {
-        currentMultiplier *= 3;
+        currentMultiplier *= 4;
         isAllInActive = false; // 用完立即失效
     }
     if (chosenSkills.includes('s20')) {
@@ -2927,7 +3178,7 @@ function playRound() {
     }
 
     // 技能25：直达天际
-    if (chosenSkills.includes('s25') && totalFan > 180) {
+    if (chosenSkills.includes('s25') && totalFan > 160) {
         currentMultiplier *= 1.7;
     }
 // 在 playRound 函数中，计算番型前添加
@@ -2971,10 +3222,32 @@ function playRound() {
             rule.name === "万箭齐发" && rule.check(selectedTiles, hand.filter(t => t !== null))
         );
         if (hasWanJianQiFa) {
-            wanJianQiFaMultiplier += 0.2;
+            wanJianQiFaMultiplier += 0.1;
         }
         currentMultiplier *= wanJianQiFaMultiplier;
     }
+        // --- 插入开始：s46 独中三元 & s47 四喜临门 ---
+    if (chosenSkills.includes('s46')) {
+        const hasdasanyuan = FAN_RULES.find(rule => 
+            rule.name === "大三元" && rule.check(selectedTiles, hand.filter(t => t !== null))
+        );
+        if (hasdasanyuan) {
+            currentMultiplier *= 2;
+        }
+    }
+    if (chosenSkills.includes('s47')) {
+        const hasdasixi = FAN_RULES.find(rule => 
+            rule.name === "大四喜" && rule.check(selectedTiles, hand.filter(t => t !== null))
+        );
+        if (hasdasixi) {
+            currentMultiplier *= 2;
+        }
+    }
+
+
+
+    // --- 插入结束 ---
+
     if (kaifazhemoshi) currentMultiplier *= Math.random()*66666;
     
     currentMultiplier = Math.round(currentMultiplier * 100) / 100;
