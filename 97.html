@@ -2123,7 +2123,7 @@ const FAN_RULES = [
             // 允许的幺九牌和字牌
             const allowed = [
                 '1万','9万','1筒','9筒','1条','9条',
-                '东','南','西','北','中','发','白'
+                '东','南','西','北','中','发','白','春','夏','秋','冬'
             ];
             
             // 1. 手牌中必须有且仅有7张来自允许列表
@@ -2146,7 +2146,7 @@ const FAN_RULES = [
             // 允许的幺九牌和字牌
             const allowed = [
                 '1万','9万','1筒','9筒','1条','9条',
-                '东','南','西','北','中','发','白'
+                '东','南','西','北','中','发','白','春','夏','秋','冬'
             ];
             
             // 手牌8张必须全部来自允许列表
@@ -2553,10 +2553,10 @@ const FAN_RULES = [
         check: (selectedTiles) => {
             const hasSpring = selectedTiles.some(t => t.type === '风' && t.name === '春');
             const stripTiles = selectedTiles.filter(t => t.type === '条' && ['2','3','4','6','8'].includes(t.name));
-            const hasNineWan = selectedTiles.some(t => t.type === '万' && t.name === '9');
+            const hasNineWan = selectedTiles.some(t => t.type === '万' && t.value === 9);
             return hasSpring && stripTiles.length === 2 && hasNineWan && selectedTiles.length === 4;
         },
-        fan: 80,
+        fan: 88,
         hasAnimation: true,
         textColor: "#2E7D32",
         glowColor: "#A5D6A7",
@@ -2570,11 +2570,11 @@ const FAN_RULES = [
             const otherTiles = selectedTiles.filter(t => !(t.type === '风' && t.name === '夏'));
             const validOther = otherTiles.every(t => 
                 (t.type === '筒' && [2,6,7].includes(t.value)) || 
-                (t.type === '字' && t.name === '中')
+                (t.type === '箭' && t.name === '中')
             );
             return hasSummer && otherTiles.length === 3 && validOther;
         },
-        fan: 128,
+        fan: 168,
         hasAnimation: true,
         textColor: "#B71C1C",
         glowColor: "#EF5350",
@@ -2588,11 +2588,11 @@ const FAN_RULES = [
             const otherTiles = selectedTiles.filter(t => !(t.type === '风' && t.name === '夏'));
             const validOther = otherTiles.every(t => 
                 (t.type === '筒' && [2,6,7].includes(t.value)) || 
-                (t.type === '字' && t.name === '中')
+                (t.type === '箭' && t.name === '中')
             );
             return hasSummer && otherTiles.length === 3 && validOther;
         },
-        fan: 80,
+        fan: 88,
         hasAnimation: true,
         textColor: "#B71C1C",
         glowColor: "#EF5350",
@@ -2602,12 +2602,12 @@ const FAN_RULES = [
         name: "中秋赏月",
         check: (selectedTiles) => {
             const hasAutumn = selectedTiles.some(t => t.type === '风' && t.name === '秋');
-            const hasZhong = selectedTiles.some(t => t.type === '字' && t.name === '中');
+            const hasZhong = selectedTiles.some(t => t.type === '箭' && t.name === '中');
             const oneTong = selectedTiles.filter(t => t.type === '筒' && t.name === '1').length === 1;
             const tongCount = selectedTiles.filter(t => t.type === '筒').length;
             return hasAutumn && hasZhong && oneTong && tongCount === 2 && selectedTiles.length === 4;
         },
-        fan: 80,
+        fan: 88,
         hasAnimation: true,
         textColor: "#FFD700",
         glowColor: "#FFFACD",
@@ -2623,7 +2623,7 @@ const FAN_RULES = [
             const wanCount = selectedTiles.filter(t => t.type === '万').length === 1;
             return hasWinter && hasWest && hasNorth && wanCount && selectedTiles.length === 4;
         },
-        fan: 80,
+        fan: 88,
         hasAnimation: true,
         textColor: "#666666",
         glowColor: "#F0F0F0",
@@ -2639,7 +2639,7 @@ const FAN_RULES = [
             const wanCount = selectedTiles.filter(t => t.type === '万').length === 1;
             return hasWinter && hasWest && hasNorth && wanCount && selectedTiles.length === 4;
         },
-        fan: 128,
+        fan: 168,
         hasAnimation: true,
         textColor: "#666666",
         glowColor: "#F0F0F0",
