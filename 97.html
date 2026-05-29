@@ -10,6 +10,15 @@
     --gap: 2px;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
+/* 火背景 */
+
+
+
+@keyframes fire-ice-animation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
 body { 
     font-family: "Microsoft YaHei", sans-serif; 
     background: #0a2e18; 
@@ -542,6 +551,10 @@ const TILES = [
     {id: 'z5', name: '中', type: '箭', value: 15, img: 'images/mahjong/z5.png'},
     {id: 'z6', name: '发', type: '箭', value: 16, img: 'images/mahjong/z6.png'},
     {id: 'z7', name: '白', type: '箭', value: 17, img: 'images/mahjong/z7.png'},
+    {id: 'z8', name: '春', type: '风', value: 18, img: 'images/mahjong/z8.png'},
+    {id: 'z9', name: '夏', type: '风', value: 19, img: 'images/mahjong/z9.png'},
+    {id: 'z10', name: '秋', type: '风', value: 20, img: 'images/mahjong/z10.png'},
+    {id: 'z11', name: '冬', type: '风', value: 21, img: 'images/mahjong/z11.png'},
     { id: 'm5_red', name: '赤五万', type: '万', value: 5, img: 'images/mahjong/m5_red.png'},
     { id: 'p5_red', name: '赤五筒', type: '筒', value: 5, img: 'images/mahjong/p5_red.png'},
     { id: 's5_red', name: '赤五条', type: '条', value: 5, img: 'images/mahjong/s5_red.png'}
@@ -638,13 +651,63 @@ const FAN_RULES = [
         name: "大四喜",
         check: (selectedTiles) => {
             const winds = selectedTiles.filter(t => t.type === '风');
-            return winds.length === 4 && new Set(winds.map(t => t.name)).size === 4;
+            const windNames = winds.map(t => t.name);
+            const eastSouthWestNorth = ['东','南','西','北'];
+            const springSummerAutumnWinter = ['春','夏','秋','冬'];
+            const isAllESWN = eastSouthWestNorth.every(name => windNames.includes(name)) && windNames.length === 4;
+            const isAllSSAW = springSummerAutumnWinter.every(name => windNames.includes(name)) && windNames.length === 4;
+            return isAllESWN || isAllSSAW;
         },
         fan: 88,
         hasAnimation: true,
         textColor: "#ff4444",
         glowColor: "#ff0000",
         bgColor: "#330000"
+    },
+    {
+        name: "小四喜",
+        check: (selectedTiles) => {
+            const winds = selectedTiles.filter(t => t.type === '风');
+            const windNames = winds.map(t => t.name);
+            const eastSouthWestNorth = ['东','南','西','北'];
+            const springSummerAutumnWinter = ['春','夏','秋','冬'];
+            const has3ESWN = eastSouthWestNorth.filter(name => windNames.includes(name)).length === 3;
+            const has3SSAW = springSummerAutumnWinter.filter(name => windNames.includes(name)).length === 3;
+            return has3ESWN || has3SSAW;
+        },
+        fan: 32,
+        hasAnimation: true,
+        textColor: "#ff4444",
+        glowColor: "#ff0000",
+        bgColor: "#330000"
+    },
+    {
+        name: "小三风",
+        check: (selectedTiles) => {
+            const winds = selectedTiles.filter(t => t.type === '风');
+            const windNames = winds.map(t => t.name);
+            const eastSouthWestNorth = ['东','南','西','北'];
+            const springSummerAutumnWinter = ['春','夏','秋','冬'];
+            const has2ESWN = eastSouthWestNorth.filter(name => windNames.includes(name)).length === 2;
+            const has2SSAW = springSummerAutumnWinter.filter(name => windNames.includes(name)).length === 2;
+            return has2ESWN || has2SSAW;
+        },
+        fan: 8,
+        hasAnimation: false
+    },
+    {
+        name: "双小三风",
+        check: (selectedTiles) => {
+            const winds = selectedTiles.filter(t => t.type === '风');
+            const windNames = winds.map(t => t.name);
+            const eastSouthWestNorth = ['东','南','西','北'];
+            const springSummerAutumnWinter = ['春','夏','秋','冬'];
+            const countESWN = eastSouthWestNorth.filter(name => windNames.includes(name)).length;
+            const countSSAW = springSummerAutumnWinter.filter(name => windNames.includes(name)).length;
+            return countESWN === 2 && countSSAW === 2;
+        },
+        fan: 16,
+        hasAnimation: false
     },
     {
         name: "大三元",
@@ -728,18 +791,7 @@ const FAN_RULES = [
         glowColor: "#32CD32",
         bgColor: "#003300"
     },
-    {
-        name: "小四喜",
-        check: (selectedTiles) => {
-            const winds = selectedTiles.filter(t => t.type === '风');
-            return winds.length === 3 && new Set(winds.map(t => t.name)).size === 3;
-        },
-        fan: 32,
-        hasAnimation: true,
-        textColor: "#ff4444",
-        glowColor: "#ff0000",
-        bgColor: "#330000"
-    },
+
     {
         name: "百万石",
         check: (selectedTiles) => {
@@ -1239,15 +1291,7 @@ const FAN_RULES = [
         fan: 8,
         hasAnimation: false
     },
-    {
-        name: "小三风",
-        check: (selectedTiles) => {
-            const winds = selectedTiles.filter(t => t.type === '风');
-            return winds.length === 2 && new Set(winds.map(t => t.name)).size === 2;
-        },
-        fan: 8,
-        hasAnimation: false
-    },
+
     {
         name: "丹青流彩",
         check: (selectedTiles) => {
@@ -2445,7 +2489,7 @@ const FAN_RULES = [
             return true;
             
         },
-        fan: 18,
+        fan: 15,
         hasAnimation: false
     },
     {
@@ -2503,7 +2547,156 @@ const FAN_RULES = [
         },
         fan: 30,
         hasAnimation: false
+    },
+    {
+        name: "雨后春山",
+        check: (selectedTiles) => {
+            const hasSpring = selectedTiles.some(t => t.type === '风' && t.name === '春');
+            const stripTiles = selectedTiles.filter(t => t.type === '条' && ['2','3','4','6','8'].includes(t.name));
+            const hasNineWan = selectedTiles.some(t => t.type === '万' && t.name === '9');
+            return hasSpring && stripTiles.length === 2 && hasNineWan && selectedTiles.length === 4;
+        },
+        fan: 80,
+        hasAnimation: true,
+        textColor: "#2E7D32",
+        glowColor: "#A5D6A7",
+        bgColor: "#E8F5E9"
+    },
+    {
+        name: "灼炎狱夏",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s17')) return false;
+            const hasSummer = selectedTiles.some(t => t.type === '风' && t.name === '夏');
+            const otherTiles = selectedTiles.filter(t => !(t.type === '风' && t.name === '夏'));
+            const validOther = otherTiles.every(t => 
+                (t.type === '筒' && [2,6,7].includes(t.value)) || 
+                (t.type === '字' && t.name === '中')
+            );
+            return hasSummer && otherTiles.length === 3 && validOther;
+        },
+        fan: 128,
+        hasAnimation: true,
+        textColor: "#B71C1C",
+        glowColor: "#EF5350",
+        bgColor: "#FFEBEE"
+    },
+    {
+        name: "夏日炎炎",
+        check: (selectedTiles) => {
+            if (chosenSkills.includes('s17')) return false;
+            const hasSummer = selectedTiles.some(t => t.type === '风' && t.name === '夏');
+            const otherTiles = selectedTiles.filter(t => !(t.type === '风' && t.name === '夏'));
+            const validOther = otherTiles.every(t => 
+                (t.type === '筒' && [2,6,7].includes(t.value)) || 
+                (t.type === '字' && t.name === '中')
+            );
+            return hasSummer && otherTiles.length === 3 && validOther;
+        },
+        fan: 80,
+        hasAnimation: true,
+        textColor: "#B71C1C",
+        glowColor: "#EF5350",
+        bgColor: "#FFEBEE"
+    },
+    {
+        name: "中秋赏月",
+        check: (selectedTiles) => {
+            const hasAutumn = selectedTiles.some(t => t.type === '风' && t.name === '秋');
+            const hasZhong = selectedTiles.some(t => t.type === '字' && t.name === '中');
+            const oneTong = selectedTiles.filter(t => t.type === '筒' && t.name === '1').length === 1;
+            const tongCount = selectedTiles.filter(t => t.type === '筒').length;
+            return hasAutumn && hasZhong && oneTong && tongCount === 2 && selectedTiles.length === 4;
+        },
+        fan: 80,
+        hasAnimation: true,
+        textColor: "#FFD700",
+        glowColor: "#FFFACD",
+        bgColor: "#FFF8DC"
+    },
+    {
+        name: "朔风呼啸",
+        check: (selectedTiles) => {
+            if (chosenSkills.includes('s48')) return false;
+            const hasWinter = selectedTiles.some(t => t.type === '风' && t.name === '冬');
+            const hasWest = selectedTiles.some(t => t.type === '风' && t.name === '西');
+            const hasNorth = selectedTiles.some(t => t.type === '风' && t.name === '北');
+            const wanCount = selectedTiles.filter(t => t.type === '万').length === 1;
+            return hasWinter && hasWest && hasNorth && wanCount && selectedTiles.length === 4;
+        },
+        fan: 80,
+        hasAnimation: true,
+        textColor: "#666666",
+        glowColor: "#F0F0F0",
+        bgColor: "#CCCCCC"
+    },
+    {
+        name: "朔风凛冽",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s48')) return false;
+            const hasWinter = selectedTiles.some(t => t.type === '风' && t.name === '冬');
+            const hasWest = selectedTiles.some(t => t.type === '风' && t.name === '西');
+            const hasNorth = selectedTiles.some(t => t.type === '风' && t.name === '北');
+            const wanCount = selectedTiles.filter(t => t.type === '万').length === 1;
+            return hasWinter && hasWest && hasNorth && wanCount && selectedTiles.length === 4;
+        },
+        fan: 128,
+        hasAnimation: true,
+        textColor: "#666666",
+        glowColor: "#F0F0F0",
+        bgColor: "#FFFFFF"
+    },
+        {
+        name: "时令",
+        check: (selectedTiles) => {
+            const seasons = selectedTiles.filter(t => t.type === '风' && ['春','夏','秋','冬'].includes(t.name));
+            return seasons.length === 1;
+        },
+        fan: 16,
+        hasAnimation: false,
+        textColor: "#333333",
+        glowColor: "#999999",
+        bgColor: "#F5F5F5"
+    },
+    {
+        name: "时令",
+        check: (selectedTiles) => {
+            const seasons = selectedTiles.filter(t => t.type === '风' && ['春','夏','秋','冬'].includes(t.name));
+            return seasons.length === 2;
+        },
+        fan: 32,
+        hasAnimation: false,
+        textColor: "#333333",
+        glowColor: "#999999",
+        bgColor: "#F5F5F5"
+    },
+    {
+        name: "时令",
+        check: (selectedTiles) => {
+            const seasons = selectedTiles.filter(t => t.type === '风' && ['春','夏','秋','冬'].includes(t.name));
+            return seasons.length === 3;
+        },
+        fan: 48,
+        hasAnimation: false,
+        textColor: "#333333",
+        glowColor: "#999999",
+        bgColor: "#F5F5F5"
+    },
+    {
+        name: "时令",
+        check: (selectedTiles) => {
+            const seasons = selectedTiles.filter(t => t.type === '风' && ['春','夏','秋','冬'].includes(t.name));
+            return seasons.length === 4;
+        },
+        fan: 64,
+        hasAnimation: false,
+        textColor: "#333333",
+        glowColor: "#999999",
+        bgColor: "#F5F5F5"
     }
+
+
+
+
 
 
 
@@ -2551,7 +2744,7 @@ const SKILLS = [
     { id: 's33', name: '九莲宝灯', desc: '解锁番型九莲宝灯。', bgColor: '#FFC0CB' },
 
     { id: 's34', name: '万箭齐发', desc: '解锁番型万箭齐发，每打出一次倍率+0.1', bgColor: '#87CEEB' },
-    { id: 's35', name: '硬碰硬', desc: '升级碰碰胡为硬碰硬（18番）', bgColor: '#D8BFD8' }, // 浅紫色
+    { id: 's35', name: '硬碰硬', desc: '升级碰碰胡为硬碰硬（15番）', bgColor: '#D8BFD8' }, // 浅紫色
     { id: "s36", name: "形单影只", desc: "升级全单", bgColor: "#888888" },
     { id: "s37", name: "对影成双", desc: "升级全双", bgColor: "#006400" },
     { id: "s38", name: "水天一色", desc: "升级绿一色", bgColor: "#00AA00" },
@@ -2571,6 +2764,11 @@ const SKILLS = [
     { id: 's47', name: '四喜临门', desc: '打出大四喜时倍率x1.8', bgColor: '#FF0000' },
     { id: 's48', name: '冰之力', desc: '接下来3轮轮次数不变', bgColor: '#87CEEB' },
     { id: 's49', name: '冰与火之力', desc: '融合冰之力与火之力，获得两者的叠加效果', bgColor: '#FF4500' }, // 橙红色
+    { id: 's50', name: '春之精灵', desc: '牌组中加一张风牌春。', bgColor: '#FFB6C1' },
+    { id: 's51', name: '夏之精灵', desc: '牌组中加一张风牌夏。', bgColor: '#90EE90' },
+    { id: 's52', name: '秋之精灵', desc: '牌组中加一张风牌秋。', bgColor: '#FFD580' },
+    { id: 's53', name: '冬之精灵', desc: '牌组中加一张风牌冬。', bgColor: '#CCCCCC' },
+
 
     { id: 's22', name: '四季发财', desc: '发字的发牌权重增加99999', bgColor: '#39D700' }
 
@@ -2590,7 +2788,7 @@ function init() {
     firePowerRound = -1; 
     wanJianQiFaMultiplier = 1.0;
     hasAddedRedTiles = false; 
-    skillRounds = [8, 12, 18, 22, 28, 32, 38, 42, 48, 52, 58, 62, 68, 72, 78, 82, 88, 92, 98];
+    skillRounds = [2, 12, 18, 22, 28, 32, 38, 42, 48, 52, 58, 62, 68, 72, 78, 82, 88, 92, 98]; //kaifa
     
     pureZhongyuanMultiplier = 1;
     const deck = [
@@ -2632,6 +2830,10 @@ function init() {
         {id: 'z5', name: '中', type: '箭', value: 15, img: 'images/mahjong/z5.png'},
         {id: 'z6', name: '发', type: '箭', value: 16, img: 'images/mahjong/z6.png'},
         {id: 'z7', name: '白', type: '箭', value: 17, img: 'images/mahjong/z7.png'},
+        {id: 'z8', name: '春', type: '风', value: 18, img: 'images/mahjong/z8.png'},
+        {id: 'z9', name: '夏', type: '风', value: 19, img: 'images/mahjong/z9.png'},
+        {id: 'z10', name: '秋', type: '风', value: 20, img: 'images/mahjong/z10.png'},
+        {id: 'z11', name: '冬', type: '风', value: 21, img: 'images/mahjong/z11.png'},
         { id: 'm5_red', name: '赤五万', type: '万', value: 5, img: 'images/mahjong/m5_red.png'},
         { id: 'p5_red', name: '赤五筒', type: '筒', value: 5, img: 'images/mahjong/p5_red.png'},
         { id: 's5_red', name: '赤五条', type: '条', value: 5, img: 'images/mahjong/s5_red.png'}
@@ -2680,7 +2882,7 @@ function adjustWeights() {
     // 重置为100
     weights.fill(100);
     TILES.forEach((tile, idx) => {
-        if (tile.name === '赤五万' || tile.name === '赤五筒' || tile.name === '赤五条') {
+        if (tile.name === '赤五万' || tile.name === '赤五筒' || tile.name === '赤五条' || tile.name === '春' || tile.name === '夏' || tile.name === '秋' || tile.name === '冬') {
             weights[idx] = 0;
         }
     });
@@ -2691,6 +2893,10 @@ function adjustWeights() {
             if (skillId === 's28' && tile.name === '赤五万') weights[idx] = 100;
             if (skillId === 's39' && tile.name === '赤五筒') weights[idx] = 100;
             if (skillId === 's40' && tile.name === '赤五条') weights[idx] = 100;
+            if (skillId === 's50' && tile.name === '春') weights[idx] = 100;
+            if (skillId === 's51' && tile.name === '夏') weights[idx] = 100;
+            if (skillId === 's52' && tile.name === '秋') weights[idx] = 100;
+            if (skillId === 's53' && tile.name === '冬') weights[idx] = 100;
             if (skillId === 's1' && tile.type === '万') weights[idx] *= 3; // 万子偏爱
             if (skillId === 's2' && tile.type === '筒') weights[idx] *= 3; // 筒子之友
             if (skillId === 's3' && tile.type === '条') weights[idx] *= 3; // 条子专家
@@ -3426,23 +3632,14 @@ function showSkillModal() {
     
     roundSpan.innerText = round;
     optionsDiv.innerHTML = '';
-
-    // ✅ 过滤掉已经选过的技能
-    const availableSkills = SKILLS.filter(skill => !chosenSkills.includes(skill.id));
-    // ✅ 检查是否已同时拥有火之力(s17)和冰之力(s48)
     const hasFireAndIce = chosenSkills.includes('s17') && chosenSkills.includes('s48');
+    // ✅ 过滤掉已经选过的技能
+    const availableSkills = SKILLS.filter(skill => 
+        !chosenSkills.includes(skill.id) && 
+        (skill.id !== 's49' || hasFireAndIce)
+    );
     
-    // ✅ 如果已拥有火之力和冰之力，则添加冰与火之力(s49)到可选技能池
-    if (hasFireAndIce) {
-        // 确保s49还没被选过
-        if (!chosenSkills.includes('s49')) {
-            // 在SKILLS数组中添加s49的定义（需要在SKILLS数组中预先定义）
-            const iceFireSkill = SKILLS.find(skill => skill.id === 's49');
-            if (iceFireSkill) {
-                availableSkills.push(iceFireSkill);
-            }
-        }
-    }
+    
     // 如果可选技能不足3个，就全部显示（一般不会发生）
     const shuffled = [...availableSkills].sort(() => 0.5 - Math.random());
     const threeSkills = shuffled.slice(0, Math.min(3, shuffled.length));
@@ -3484,7 +3681,6 @@ function chooseSkill(skillId) {
     if (skillId === 's48' || skillId === 's49') {
         icePowerCount = 3;       // 接下来3轮轮次数不变
     }
-    
     const listEl = document.getElementById('chosenSkillsList');
     const names = chosenSkills.map(id => SKILLS.find(s => s.id === id).name.replace('技能', '技'));
     listEl.innerHTML = names.join('<br>');
