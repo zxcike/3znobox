@@ -2562,8 +2562,8 @@ const SKILLS = [
     { id: 's43', name: '暗广能手', desc: '你已急哭.cc', bgColor: '#139178' },
     { id: 's44', name: '毕业文凭', desc: '学会加法（和胡与清和胡）来提升文凭。', bgColor: '#0000FF' },
     { id: 's45', name: '七星连珠', desc: '解锁七星系列番型。', bgColor: '#00008B' },
-    { id: 's46', name: '独中三元', desc: '打出大三元时倍率x2', bgColor: '#FFD700' },
-    { id: 's47', name: '四喜临门', desc: '打出大四喜时倍率x2', bgColor: '#FF0000' },
+    { id: 's46', name: '独中三元', desc: '打出大三元时倍率x1.7', bgColor: '#FFD700' },
+    { id: 's47', name: '四喜临门', desc: '打出大四喜时倍率x1.8', bgColor: '#FF0000' },
 
 
 
@@ -3232,7 +3232,7 @@ function playRound() {
             rule.name === "大三元" && rule.check(selectedTiles, hand.filter(t => t !== null))
         );
         if (hasdasanyuan) {
-            currentMultiplier *= 2;
+            currentMultiplier *= 1.7;
         }
     }
     if (chosenSkills.includes('s47')) {
@@ -3240,7 +3240,7 @@ function playRound() {
             rule.name === "大四喜" && rule.check(selectedTiles, hand.filter(t => t !== null))
         );
         if (hasdasixi) {
-            currentMultiplier *= 2;
+            currentMultiplier *= 1.8;
         }
     }
 
