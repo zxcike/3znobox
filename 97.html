@@ -481,6 +481,58 @@ function playFanWindSound() {
 
     source.start();
 }
+// 🎻 番型动画：Hajimi 旋律（G4 A4 G4 D4 F4）
+function playHajimiSound() {
+    initAudioOnce();
+    if (!audioCtx) return;
+
+    const now = audioCtx.currentTime;
+    
+    // 1️⃣ 定义音高（频率 Hz）
+    // G4=392, A4=440, D4=293.7, F4=349.2
+    const notes = [392, 440, 392, 293.7, 349.2];
+    
+    // 2️⃣ 定义节奏
+    const noteDuration = 0.25;    // 前四个音的长度
+    const lastNoteExtra = 0.6;   // 最后一个音多拖 0.6 秒
+    const gap = -0.05;            // 音符之间的空隙（防止糊在一起）
+
+    notes.forEach((freq, index) => {
+        const startTime = now + index * (noteDuration + gap);
+        const isLastNote = index === notes.length - 1;
+        const duration = isLastNote ? noteDuration + lastNoteExtra : noteDuration;
+
+        // --- 主振荡器（弦乐核心）---
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        // 使用 Sawtooth 模拟小提琴的丰富泛音
+        osc.type = 'sawtooth'; 
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        // --- 滤波器（去掉刺耳的高频，更像真琴）---
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 2000; // 切掉 2kHz 以上的杂音
+
+        // --- 音量包络（ADSR 感）---
+        const attackTime = 0.02; // 起音快
+        const releaseTime = isLastNote ? 0.6 : 0.3; // 尾音慢一点
+
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.2, startTime + attackTime); // Attack
+        gain.gain.setValueAtTime(0.2, startTime + attackTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration + releaseTime); // Release
+
+        // 连接线路
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + duration + releaseTime);
+    });
+}
 
 
 // 播放白噪音
@@ -557,7 +609,8 @@ const TILES = [
     {id: 'z11', name: '冬', type: '风', value: 21, img: 'images/mahjong/z11.png'},
     { id: 'm5_red', name: '赤五万', type: '万', value: 5, img: 'images/mahjong/m5_red.png'},
     { id: 'p5_red', name: '赤五筒', type: '筒', value: 5, img: 'images/mahjong/p5_red.png'},
-    { id: 's5_red', name: '赤五条', type: '条', value: 5, img: 'images/mahjong/s5_red.png'}
+    { id: 's5_red', name: '赤五条', type: '条', value: 5, img: 'images/mahjong/s5_red.png'},
+    {id: 'z5_1', name: '血中', type: '箭', value: 15, img: 'images/mahjong/z5.png'}
 ];
 
 // 游戏状态
@@ -722,9 +775,33 @@ const FAN_RULES = [
         bgColor: "#110033"
     },
     {
+        name: "大四元",
+        check: (selectedTiles) => {
+            const arrows = selectedTiles.filter(t => t.type === '箭');
+            return arrows.length === 4 && new Set(arrows.map(t => t.name)).size === 4;
+        },
+        fan: 128,
+        hasAnimation: true,
+        textColor: "#bbbbbb",
+        glowColor: "#ffffff",
+        bgColor: "#885599"
+    },
+    {
+        name: "红一色",
+        check: (selectedTiles) => {
+            const allowed = ['赤五筒','赤五万','赤五条','中','血中','春'];
+            return selectedTiles.every(t => allowed.includes(t.name));
+        },
+        fan: 128,
+        hasAnimation: true,
+        textColor: "#ff88cc",
+        glowColor: "#ff0000",
+        bgColor: "#882255"
+    },
+    {
         name: "红孔雀",
         check: (selectedTiles) => {
-            const allowed = ['1条','5条','赤五条','7条','9条','中'];
+            const allowed = ['1条','5条','赤五条','7条','9条','中','血中'];
             return selectedTiles.every(t => allowed.includes(t.name));
         },
         fan: 48,
@@ -778,6 +855,26 @@ const FAN_RULES = [
         glowColor: "#654321",
         bgColor: "#221100"
     },
+    {
+        name: "清四连刻",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s54')) return false;
+            const numberTiles = selectedTiles.filter(t => t.type === '万' || t.type === '条' || t.type === '筒');
+            if (numberTiles.length < 4) return false;
+            const types = numberTiles.map(t => t.type);
+            if (!types.every(t => t === types[0])) return false;
+            const values = numberTiles.map(t => t.value).sort((a,b)=>a-b);
+            for (let i=0; i<=values.length-4; i++) {
+                if (values[i+3]-values[i]===3) return true;
+            }
+            return false;
+        },
+        fan: 88,
+        hasAnimation: true,
+        textColor: "#8B4513",
+        glowColor: "#654321",
+        bgColor: "#221100"
+    },    
     {
         name: "清幺九",
         check: (selectedTiles) => {
@@ -872,7 +969,7 @@ const FAN_RULES = [
     {
         name: "中原一点红",
         check: (selectedTiles) => {
-            const allowed = ['1筒','3筒','5筒','赤五筒','6筒','7筒','9筒','中'];
+            const allowed = ['1筒','3筒','5筒','赤五筒','6筒','7筒','9筒','中','血中'];
             return selectedTiles.every(t => allowed.includes(t.name));
         },
         fan: 24,
@@ -1390,7 +1487,7 @@ const FAN_RULES = [
             if (!chosenSkills.includes('s12')) return false;
             
             // 选出的牌：只能是1579条和中
-            const allowedSelected = ['1条','5条','7条','9条','中'];
+            const allowedSelected = ['1条','5条','7条','9条','中','血中'];
             const selectedValid = selectedTiles.every(t => allowedSelected.includes(t.name));
             if (!selectedValid) return false;
             
@@ -1809,7 +1906,7 @@ const FAN_RULES = [
     {
         name: "带红胡",
         check: (selectedTiles) => {
-            const forbidden = ['2条','3条','4条','6条','8条','4筒','8筒','东','南','西','北','发','白'];
+            const forbidden = ['2条','3条','4条','6条','8条','4筒','8筒','东','南','西','北','发','白','夏','秋','冬'];
             return !selectedTiles.some(t => forbidden.includes(t.name));
         },
         fan: 2,
@@ -2123,7 +2220,7 @@ const FAN_RULES = [
             // 允许的幺九牌和字牌
             const allowed = [
                 '1万','9万','1筒','9筒','1条','9条',
-                '东','南','西','北','中','发','白','春','夏','秋','冬'
+                '东','南','西','北','中','血中','发','白','春','夏','秋','冬'
             ];
             
             // 1. 手牌中必须有且仅有7张来自允许列表
@@ -2146,7 +2243,7 @@ const FAN_RULES = [
             // 允许的幺九牌和字牌
             const allowed = [
                 '1万','9万','1筒','9筒','1条','9条',
-                '东','南','西','北','中','发','白','春','夏','秋','冬'
+                '东','南','西','北','中','血中','发','白','春','夏','秋','冬'
             ];
             
             // 手牌8张必须全部来自允许列表
@@ -2204,7 +2301,7 @@ const FAN_RULES = [
         name: "金孔雀",
         check: (selectedTiles) => {
             if (!chosenSkills.includes('s12')) return false;
-            const allowed = ['1条','5条','赤五条','7条','9条','中'];
+            const allowed = ['1条','5条','赤五条','7条','9条','中','血中'];
             return selectedTiles.every(t => allowed.includes(t.name));
         },
         fan: 88,
@@ -2570,7 +2667,7 @@ const FAN_RULES = [
             const otherTiles = selectedTiles.filter(t => !(t.type === '风' && t.name === '夏'));
             const validOther = otherTiles.every(t => 
                 (t.type === '筒' && [2,6,7].includes(t.value)) || 
-                (t.type === '箭' && t.name === '中')
+                (t.type === '箭' && t.value === 15)
             );
             return hasSummer && otherTiles.length === 3 && validOther;
         },
@@ -2588,7 +2685,7 @@ const FAN_RULES = [
             const otherTiles = selectedTiles.filter(t => !(t.type === '风' && t.name === '夏'));
             const validOther = otherTiles.every(t => 
                 (t.type === '筒' && [2,6,7].includes(t.value)) || 
-                (t.type === '箭' && t.name === '中')
+                (t.type === '箭' && t.value === 15)
             );
             return hasSummer && otherTiles.length === 3 && validOther;
         },
@@ -2602,7 +2699,7 @@ const FAN_RULES = [
         name: "中秋赏月",
         check: (selectedTiles) => {
             const hasAutumn = selectedTiles.some(t => t.type === '风' && t.name === '秋');
-            const hasZhong = selectedTiles.some(t => t.type === '箭' && t.name === '中');
+            const hasZhong = selectedTiles.some(t => t.type === '箭' && t.value === 15);
             const oneTong = selectedTiles.filter(t => t.type === '筒' && t.value === 1).length === 1;
             const tongCount = selectedTiles.filter(t => t.type === '筒').length;
             return hasAutumn && hasZhong && oneTong && tongCount === 2 && selectedTiles.length === 4;
@@ -2645,13 +2742,33 @@ const FAN_RULES = [
         glowColor: "#F0F0F0",
         bgColor: "#FFFFFF"
     },
-        {
+    {
+        name: "带红中",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s55')) return false;
+            const seasons = selectedTiles.filter(t => t.type === '箭' && [15].includes(t.value));
+            return seasons.length === 1;
+        },
+        fan: 24,
+        hasAnimation: false
+    },
+    {
+        name: "带红中",
+        check: (selectedTiles) => {
+            if (!chosenSkills.includes('s55')) return false;
+            const seasons = selectedTiles.filter(t => t.type === '箭' && [15].includes(t.value));
+            return seasons.length === 2;
+        },
+        fan: 48,
+        hasAnimation: false
+    },
+    {
         name: "时令",
         check: (selectedTiles) => {
             const seasons = selectedTiles.filter(t => t.type === '风' && ['春','夏','秋','冬'].includes(t.name));
             return seasons.length === 1;
         },
-        fan: 16,
+        fan: 24,
         hasAnimation: false,
         textColor: "#333333",
         glowColor: "#999999",
@@ -2663,7 +2780,7 @@ const FAN_RULES = [
             const seasons = selectedTiles.filter(t => t.type === '风' && ['春','夏','秋','冬'].includes(t.name));
             return seasons.length === 2;
         },
-        fan: 32,
+        fan: 48,
         hasAnimation: false,
         textColor: "#333333",
         glowColor: "#999999",
@@ -2675,7 +2792,7 @@ const FAN_RULES = [
             const seasons = selectedTiles.filter(t => t.type === '风' && ['春','夏','秋','冬'].includes(t.name));
             return seasons.length === 3;
         },
-        fan: 48,
+        fan: 72,
         hasAnimation: false,
         textColor: "#333333",
         glowColor: "#999999",
@@ -2687,7 +2804,7 @@ const FAN_RULES = [
             const seasons = selectedTiles.filter(t => t.type === '风' && ['春','夏','秋','冬'].includes(t.name));
             return seasons.length === 4;
         },
-        fan: 64,
+        fan: 96,
         hasAnimation: false,
         textColor: "#333333",
         glowColor: "#999999",
@@ -2768,6 +2885,9 @@ const SKILLS = [
     { id: 's51', name: '夏之精灵', desc: '牌组中加一张风牌夏。', bgColor: '#90EE90' },
     { id: 's52', name: '秋之精灵', desc: '牌组中加一张风牌秋。', bgColor: '#FFD580' },
     { id: 's53', name: '冬之精灵', desc: '牌组中加一张风牌冬。', bgColor: '#CCCCCC' },
+    { id: 's54', name: '清四连刻', desc: '四连刻升级为清四连刻', bgColor: '#44ffaa' },
+    { id: 's55', name: '血流红中', desc: '获得一张新的红中', bgColor: '#ee6655' },
+    { id: 's56', name: '手铐', desc: '你的最大番数只有90，溢出去的部分转化为倍数', bgColor: '#eeaaaa' },
 
 
     { id: 's22', name: '四季发财', desc: '发字的发牌权重增加99999', bgColor: '#39D700' }
@@ -2836,10 +2956,19 @@ function init() {
         {id: 'z11', name: '冬', type: '风', value: 21, img: 'images/mahjong/z11.png'},
         { id: 'm5_red', name: '赤五万', type: '万', value: 5, img: 'images/mahjong/m5_red.png'},
         { id: 'p5_red', name: '赤五筒', type: '筒', value: 5, img: 'images/mahjong/p5_red.png'},
-        { id: 's5_red', name: '赤五条', type: '条', value: 5, img: 'images/mahjong/s5_red.png'}
+        { id: 's5_red', name: '赤五条', type: '条', value: 5, img: 'images/mahjong/s5_red.png'},
+        {id: 'z5_1', name: '血中', type: '箭', value: 15, img: 'images/mahjong/z5.png'}
     ];
 
     chosenSkills = [ ]; //kaifa
+    if (1 === 2) chosenSkills = [
+  's7', 's8', 's9', 's10', 's11', 's12', 's13', 's14', 's15', 's16',
+  's17', 's18', 's19', 's20', 's21', 's22', 's23', 's24', 's25', 's26',
+  's27', 's28', 's29', 's30', 's31', 's32', 's33', 's34', 's35', 's36',
+  's37', 's38', 's39', 's40', 's41', 's42', 's43', 's44', 's45', 's46',
+  's47', 's48', 's49', 's50', 's51', 's52', 's53', 's54', 's55', 's56'
+    ];
+
     iceCreamMultiplier = 1.6;
     thickMultiplier = 1.1;
     pureMultiplier = 1.0;
@@ -2882,7 +3011,7 @@ function adjustWeights() {
     // 重置为100
     weights.fill(100);
     TILES.forEach((tile, idx) => {
-        if (tile.name === '赤五万' || tile.name === '赤五筒' || tile.name === '赤五条' || tile.name === '春' || tile.name === '夏' || tile.name === '秋' || tile.name === '冬') {
+        if (tile.name === '赤五万' || tile.name === '赤五筒' || tile.name === '赤五条' || tile.name === '春' || tile.name === '夏' || tile.name === '秋' || tile.name === '冬' || tile.name === '血中') {
             weights[idx] = 0;
         }
     });
@@ -2897,6 +3026,7 @@ function adjustWeights() {
             if (skillId === 's51' && tile.name === '夏') weights[idx] = 100;
             if (skillId === 's52' && tile.name === '秋') weights[idx] = 100;
             if (skillId === 's53' && tile.name === '冬') weights[idx] = 100;
+            if (skillId === 's55' && tile.name === '血中') weights[idx] = 100;
             if (skillId === 's1' && tile.type === '万') weights[idx] *= 3; // 万子偏爱
             if (skillId === 's2' && tile.type === '筒') weights[idx] *= 3; // 筒子之友
             if (skillId === 's3' && tile.type === '条') weights[idx] *= 3; // 条子专家
@@ -3194,7 +3324,14 @@ function renderAllFans(allFans, totalFan) {
         </div>
     `).join('');
     
-    document.getElementById('previewScore').innerText = totalFan;
+    let displayFan = totalFan;
+
+    if (chosenSkills.includes('s56')) {
+        displayFan = Math.min(totalFan, 90);
+    }
+
+    document.getElementById('previewScore').innerText = displayFan;
+
 }
 
 // 清除预览
@@ -3319,6 +3456,11 @@ function playRound() {
     });
     // 获取当前技能倍率
     let currentMultiplier = 1.0;
+    if (chosenSkills.includes('s56') && totalFan > 90){
+        let yichufan = totalFan - 90;
+        totalFan = 90;
+        currentMultiplier *= (1+0.1*yichufan);
+    }
     if (chosenSkills.includes('s7') && totalFan > 50) {
         currentMultiplier *= 1.3;    
     }
@@ -3558,8 +3700,14 @@ function showAnimation(rule, selectedTiles) {
     
     textElement.innerText = rule.name; //动画声音
     if (rule.name === '大四喜' ) playFanWindSound();
-    else playFanWindSound();
+    if (rule.name === '哈基米南北绿豆' ) playHajimiSound();
     
+    
+    
+    
+    
+    
+    playFanWindSound();
     
     
     
