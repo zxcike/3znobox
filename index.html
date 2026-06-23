@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>🎰 老虎机</title>
+<style>
+html,body{margin:0;height:100%;background:#0b0b2d;color:#fff;font-family:sans-serif;display:flex;justify-content:center;align-items:center;overflow:hidden}
+.container{display:flex;flex-direction:column;align-items:center;gap:40px;width:95vw;max-width:1800px;}
+.machine{background:#181828;border-radius:16px;padding:4px;display:flex;flex-direction:row;align-items:center;gap:20px;position:relative;padding-right:160px;padding-left:160px;}
+.reels{display:flex;gap:10px}
+.viewport{
+  width:130px;height:360px;
+  overflow:hidden;
+  background:#050511;
+  border-radius:12px;
+  position:relative;
+}
+.line-2, .line-3{
+  position:absolute;
+  left:0;right:0;
+  height:2px;
+  background:#facc15;
+  box-shadow:0 0 10px #facc15;
+  z-index:10;
+}
+.line-2{top:120px}
+.line-3{top:240px}
+
+.strip{display:flex;flex-direction:column}
+.cell{
+  width:130px;height:120px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:2.8rem;
+}
+.cell img{max-width:90%;max-height:90%}
+.info{font-size:.95rem}
+.gold{color:#facc15;font-weight:700}
+button{padding:10px 24px;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer}
+#spin{background:linear-gradient(135deg,#f59e0b,#f97316);color:#1c1408}
+#spin10{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;margin-left:10px;}
+#statsBtn{background:linear-gradient(135deg,#10b981,#059669);color:#fff;margin-left:10px;}
+.glow-purple{
+  box-shadow:0 0 15px #aa44ff, 0 0 30px #aa44ff, inset 0 0 15px rgba(170,68,255,0.3);
+}
+
+/* S/SS/SSS 级金光 */
+.glow-gold{
+  box-shadow:0 0 15px #ffcc00, 0 0 30px #ffcc00, inset 0 0 15px rgba(255,204,0,0.3);
+}
+#win-alert{
+  position:absolute;
+  right:80px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:4rem;font-weight:bold;
+  text-shadow:0 0 20px currentColor, 0 0 40px currentColor;
+  opacity:0;transition:opacity 0.3s;
+  pointer-events:none;
+  z-index:10000;
+  white-space:nowrap;
+}
+#win-alert.show{opacity:1}
+
+/* ================== 10连抽结果样式 ================== */
+#result-overlay{
+  position:absolute;
+  top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.85);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:5000;
+  border-radius:16px;
+}
+#result-grid{
+  display:grid;
+  grid-template-columns:repeat(5, 120px);
+  grid-template-rows:repeat(2, 120px);
+  gap:12px;
+}
+.result-cell{
+  width:120px;height:120px;
+  display:flex;align-items:center;justify-content:center;
+  background:#050511;
+  border-radius:8px;
+  position:relative;
+  overflow:hidden;
+}
+.result-cell img{
+  max-width:108px;
+  max-height:108px;
+}
+.result-cell .level-text{
+  font-size:2.4rem;font-weight:bold;
+  text-shadow:0 0 10px currentColor, 0 0 20px currentColor;
+  display:none;
+}
+.result-cell .prize-img{
+  display:flex;
+}
+/* 颜色 */
+.level-C{color:#44ff44}
+.level-B{color:#4444ff}
+.level-A{color:#aa44ff}
+.level-S,.level-SS,.level-SSS{color:#ffcc00}
+
+.controls{
+  display:flex;flex-direction:column;align-items:center;gap:10px
+}
+
+#video-overlay{
+  position:fixed;
+  top:0;left:0;
+  width:100vw;
+  height:100vh;
+  background:#000;
+  z-index:9999;
+  display:none;
+  justify-content:center;
+  align-items:center;
+}
+
+#video-player{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:none;
+}
+
+#white-flash{
+  position:fixed;
+  top:0;left:0;
+  width:100vw;
+  height:100vh;
+  background:#fff;
+  z-index:9998;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 0.3s ease;
+}
+
+/* ================== 保底信息样式 ================== */
+.guarantee-info{
+  position:absolute;
+  left:20px;
+  top:50%;
+  transform:translateY(-50%);
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  font-size:0.9rem;
+  line-height:1.4;
+  z-index:100;
+}
+.a-guarantee{
+  color:#aa44ff;
+  text-shadow:0 0 5px #aa44ff;
+}
+.s-guarantee{
+  color:#ffcc00;
+  text-shadow:0 0 5px #ffcc00;
+}
+
+/* ================== 统计面板样式 ================== */
+#stats-overlay{
+  position:fixed;
+  top:0;left:0;
+  width:100vw;
+  height:100vh;
+  background:rgba(0,0,0,0.95);
+  z-index:9999;
+  display:none;
+  justify-content:center;
+  align-items:center;
+  padding:20px;
+  box-sizing:border-box;
+}
+#stats-panel{
+  background:#181828;
+  border-radius:16px;
+  padding:30px;
+  max-width:90vw;
+  max-height:90vh;
+  overflow-y:auto;
+  position:relative;
+}
+#stats-panel h2{
+  text-align:center;
+  margin-top:0;
+  color:#facc15;
+  font-size:2rem;
+}
+.stats-section{
+  margin-bottom:30px;
+}
+.stats-section h3{
+  margin:10px 0;
+  padding-bottom:5px;
+  border-bottom:2px solid;
+}
+.stats-section-C h3{color:#44ff44;border-color:#44ff44}
+.stats-section-B h3{color:#4444ff;border-color:#4444ff}
+.stats-section-A h3{color:#aa44ff;border-color:#aa44ff}
+.stats-section-S h3{color:#ffcc00;border-color:#ffcc00}
+.stats-section-SS h3{color:#ffcc00;border-color:#ffcc00}
+.stats-section-SSS h3{color:#ffcc00;border-color:#ffcc00}
+.stats-section-E h3{color:#ff4444;border-color:#ff4444}
+.stats-section-F h3{color:#ff4444;border-color:#ff4444}
+.stats-section-FF h3{color:#ff4444;border-color:#ff4444}
+.stats-section-D h3{color:#888;border-color:#888}
+
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:15px;
+}
+.stat-item{
+  background:#0b0b2d;
+  padding:15px;
+  border-radius:12px;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  min-width:120px;
+}
+.stat-image{
+  width:80px;
+  height:80px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#050511;
+  border-radius:8px;
+  overflow:hidden;
+}
+.stat-image img{
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
+}
+.stat-count{
+  font-size:1.5rem;
+  font-weight:bold;
+  color:#facc15;
+}
+.close-stats{
+  position:absolute;
+  top:15px;
+  right:20px;
+  background:none;
+  border:none;
+  color:#fff;
+  font-size:2rem;
+  cursor:pointer;
+  padding:0;
+  width:40px;
+  height:40px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.clear-stats{
+  display:block;
+  margin:20px auto 0;
+  background:#ef4444;
+  color:#fff;
+  padding:10px 20px;
+  border-radius:8px;
+  border:none;
+  cursor:pointer;
+  font-weight:bold;
+}
+.total-count{
+  text-align:center;
+  font-size:1.2rem;
+  color:#facc15;
+  margin-bottom:20px;
+}
+.no-data{
+  text-align:center;
+  color:#666;
+  font-style:italic;
+  padding:20px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="machine">
+    <div class="guarantee-info">
+      <div class="a-guarantee">A必中：<span id="a-counter">0</span>/10</div>
+      <div class="s-guarantee">S必中：<span id="s-counter">0</span>/100</div>
+    </div>
+    
+    <div class="reels" id="reels"></div>
+    <div id="win-alert"></div>
+    
+    <div id="result-overlay">
+      <div id="result-grid"></div>
+    </div>
+  </div>
+  
+  <div class="controls">
+    <div class="info">
+      💰 <span id="money">1000</span> 金币  每次 <span class="gold">5</span>
+    </div>
+    <div>
+      <button id="spin">🎰 SPIN</button>
+      <button id="spin10">🎰×10 十连抽</button>
+      <button id="statsBtn">📊 统计</button>
+    </div>
+    <div id="msg">准备</div>
+  </div>
+</div>
+
+<!-- 统计面板 -->
+<div id="stats-overlay">
+  <div id="stats-panel">
+    <button class="close-stats" onclick="closeStats()">×</button>
+    <h2>🎰 中奖统计</h2>
+    <div class="total-count">总中奖次数: <span id="total-wins">0</span></div>
+    <div id="stats-content"></div>
+    <button class="clear-stats" onclick="clearStats()">清空统计</button>
+  </div>
+</div>
+
+<audio id="bgm" loop>
+  <source src="/sounds/bg.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="start-sound">
+  <source src="/sounds/start.wav" type="audio/wav">
+</audio>
+
+<audio id="stop-sound">
+  <source src="/sounds/stop.wav" type="audio/wav">
+</audio>
+
+<audio id="no-win-sound">
+  <source src="/sounds/no_win.wav" type="audio/wav">
+</audio>
+
+<div id="video-overlay">
+  <video id="video-player" muted playsinline></video>
+</div>
+
+<div id="white-flash"></div>
+
+<script>
+/* ================== 图片预加载 ================== */
+function preloadAllImages() {
+  PRIZES.forEach(p => {
+    const img = new Image();
+    img.src = `/images/${p.id}.jpg`;
+  });
+}
+
+// 页面一加载就开始预加载
+// window.addEventListener("load", () =>  {preloadAllImages();});
+
+/* ===================================================
+   奖项配置
+   =================================================== */
+const PRIZES = [
+  { id:"cherry",  level:"C", gold:2, weight:15000 },
+  { id:"lemon",   level:"C",  gold:2, weight:15000 },
+  { id:"orange",  level:"B",   gold:5, weight:7500 },
+  { id:"plum",    level:"B",   gold:5, weight:7500 },
+  { id:"bell",    level:"B",   gold:5, weight:7500 },
+  { id:"bar",     level:"A",   gold:15, weight:2500 },
+  { id:"seven",   level:"A",   gold:20, weight: 2500 },
+  { id:"diamond", level:"A",   gold:25, weight: 2000 },
+  { id:"crown",   level:"A",   gold:30, weight:1500 },
+  { id:"jp", level:"S",  gold:50, weight:500 },
+  { id:"mega",level:"SS", gold:100, weight:100 },
+  { id:"onani",level:"A", gold:18, weight:100},
+  { id:"lvmk",level:"S", gold:60, weight:30},
+  { id:"rinl",level:"A", gold:16, weight:100},
+  { id:"qnna",level:"SS", gold:200, weight:10},
+  { id:"bmhhe",level:"B", gold:5, weight:300},
+  { id:"amhhe",level:"A", gold:16, weight:100},
+  { id:"smhhe",level:"S", gold:80, weight:30},
+  { id:"hutk",level:"SSS", gold:666, weight:3},
+  { id:"uvzi",level:"S", gold:50, weight:30},
+  { id:"bhupan",level:"B", gold:5, weight:300},
+  { id:"ahupan",level:"A", gold:15, weight:100},
+  { id:"gbxd",level:"E", gold:-2, weight:100},
+  { id:"qmih",level:"F", gold:-5, weight:30},
+  { id:"hzub",level:"F", gold:-5, weight:30},
+  { id:"otto",level:"E", gold:-2, weight:100},
+  { id:"man",level:"FF", gold:-24, weight:24},
+  { id:"xnbaba",level:"D", gold:0, weight:100},
+  { id:"gpmu",level:"D", gold:0, weight:100},
+  { id:"sjoker",level:"S", gold:75, weight:30},
+  { id:"ajoker",level:"A", gold:15, weight:100},
+  { id:"bjoker",level:"B", gold:5, weight:300},
+  { id:"cjoker",level:"C", gold:2, weight:600},
+  { id:"sgacha",level:"S", gold:48, weight:30},
+  { id:"agacha",level:"A", gold:18, weight:100},
+  { id:"bgacha",level:"B", gold:5, weight:300},
+  { id:"cgacha",level:"C", gold:2, weight:600},
+  { id:"stasuki",level:"S", gold:66, weight:30},
+  { id:"atasuki",level:"A", gold:16, weight:100},
+  { id:"btasuki",level:"B", gold:5, weight:300},
+  { id:"sstasuki",level:"SS", gold:166, weight:10},
+  { id:"sxdqi",level:"S", gold:50, weight:30},
+  { id:"axdqi",level:"A", gold:15, weight:100},
+  { id:"bxdqi",level:"B", gold:5, weight:300},
+  { id:"cxdqi",level:"C", gold:2, weight:600},
+  { id:"scat",level:"S", gold:66, weight:30},
+  { id:"acat",level:"A", gold:16, weight:100},
+  { id:"bcat",level:"B", gold:5, weight:300},
+  { id:"ccat",level:"C", gold:2, weight:600},
+  { id:"sword",level:"C", gold:2, weight:600},
+  { id:"wjhk",level:"A", gold:15, weight:100},
+  { id:"shupan",level:"S", gold:50, weight:30},
+  { id:"xctk",level:"B", gold:5, weight:300}
+];
+
+const COST = 5;
+const H = 120;
+
+/* ================== 根据金币计算SAME值 ================== */
+function getSameByMoney(money) {
+  if (money < 0) return 1;
+  if (money < 1000) {
+    // 从1线性下降到0.9
+    return 1 - (money / 1000) * 0.1;
+  }
+  if (money < 3000) {
+    // 从0.9线性下降到0.8
+    return 0.9 - ((money - 1000) / 2000) * 0.1;
+  }
+  if (money < 10000) {
+    // 从0.8线性下降到0.7
+    return 0.8 - ((money - 3000) / 7000) * 0.1;
+  }
+  return 0.7;
+}
+
+/* ================== 稀有度排序 ================== */
+const LEVEL_RANK = {
+  "SSS": 12,
+  "SS": 11,
+  "S": 10,
+  "A": 9,
+  "B": 8,
+  "C": 7,
+  "D": 6,
+  "E": 5,
+  "F": 4,
+  "FF": 3,
+  "FFF": 2
+};
+
+function getBestPrize(p1, p2){
+  if(!p1) return p2;
+  if(!p2) return p1;
+  return LEVEL_RANK[p1.level] >= LEVEL_RANK[p2.level] ? p1 : p2;
+}
+
+function getWorstPrize(p1, p2){
+  if(!p1) return p2;
+  if(!p2) return p1;
+  return LEVEL_RANK[p1.level] <= LEVEL_RANK[p2.level] ? p1 : p2;
+}
+
+let money = Number(localStorage.getItem("money") || 1000);
+let busy = false;
+let bgmStarted = false;
+
+let counterA = Number(localStorage.getItem("counterA") || 0);
+let counterS = Number(localStorage.getItem("counterS") || 0);
+
+/* ================== 统计系统 ================== */
+let stats = JSON.parse(localStorage.getItem("slotStats") || "{}");
+
+function updateStats(prizeId) {
+  stats[prizeId] = (stats[prizeId] || 0) + 1;
+  localStorage.setItem("slotStats", JSON.stringify(stats));
+}
+
+function showStats() {
+  const overlay = document.getElementById("stats-overlay");
+  const content = document.getElementById("stats-content");
+  
+  let totalWins = 0;
+  Object.values(stats).forEach(count => totalWins += count);
+  document.getElementById("total-wins").textContent = totalWins;
+  
+  const levelGroups = {};
+  PRIZES.forEach(prize => {
+    if (!levelGroups[prize.level]) {
+      levelGroups[prize.level] = [];
+    }
+    levelGroups[prize.level].push(prize);
+  });
+  
+  const sortedLevels = Object.keys(levelGroups).sort((a, b) => 
+    (LEVEL_RANK[b] || 0) - (LEVEL_RANK[a] || 0)
+  );
+  
+  let html = '';
+  sortedLevels.forEach(level => {
+    const prizes = levelGroups[level];
+    const prizesWithStats = prizes.filter(prize => stats[prize.id] > 0);
+    
+    if (prizesWithStats.length === 0) return;
+    
+    html += `<div class="stats-section stats-section-${level}">`;
+    html += `<h3>${level}级奖品 (${prizesWithStats.length}种)</h3>`;
+    html += '<div class="stats-grid">';
+    
+    prizesWithStats.forEach(prize => {
+      const count = stats[prize.id] || 0;
+      html += `
+        <div class="stat-item">
+          <div class="stat-image">
+            <img src="/images/${prize.id}.jpg" alt="${prize.id}" onerror="this.style.display='none';this.parentNode.innerHTML+='<span style=\\'color:#666;font-size:0.8rem\\'>无图</span>'">
+          </div>
+          <div class="stat-count">${count}</div>
+        </div>
+      `;
+    });
+    
+    html += '</div></div>';
+  });
+  
+  if (html === '') {
+    html = '<div class="no-data">暂无中奖记录<br>快去抽奖吧！</div>';
+  }
+  
+  content.innerHTML = html;
+  overlay.style.display = 'flex';
+}
+
+function closeStats() {
+  document.getElementById("stats-overlay").style.display = 'none';
+}
+
+function clearStats() {
+  if (confirm("确定要清空所有统计数据吗？")) {
+    stats = {};
+    localStorage.removeItem("slotStats");
+    showStats();
+  }
+}
+
+/* ================== 更新保底显示 ================== */
+function updateGuaranteeDisplay(){
+  document.getElementById("a-counter").textContent = counterA;
+  document.getElementById("s-counter").textContent = counterS;
+}
+
+/* ================== 稀有度判定 ================== */
+function isAorAbove(prize){
+  return ["A","S","SS","SSS"].includes(prize.level);
+}
+function isSorAbove(prize){
+  return ["S","SS","SSS"].includes(prize.level);
+}
+
+/* ================== 构建 Reel ================== */
+function buildReel(targetPrize, stopIndex){
+  const strip = document.createElement("div");
+  strip.className = "strip";  
+  
+  const totalWeight = PRIZES.reduce((sum, p) => sum + p.weight, 0);
+  
+  for(let i=0;i<60;i++){
+    let p;
+    
+    if(i === stopIndex){
+      p = targetPrize;
+    } else {
+      let random = Math.random() * totalWeight;
+      for(const prize of PRIZES){
+        random -= prize.weight;
+        if(random <= 0){
+          p = prize;
+          break;
+        }
+      }
+      if(!p) p = PRIZES[PRIZES.length - 1];
+    }
+    
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    const img = document.createElement("img");
+    img.src = `/images/${p.id}.jpg`;
+    img.onerror = ()=>{img.remove();cell.textContent=p.id};
+    cell.appendChild(img);
+    strip.appendChild(cell);
+  }
+  return strip;
+}
+
+/* ================== 权重选择 ================== */
+function pick(except=null, forceLevel=null){
+  let pool = except ? PRIZES.filter(p=>p!==except) : [...PRIZES];
+  
+  if(forceLevel){
+    pool = pool.filter(p=>p.level===forceLevel);
+  }
+
+  const totalWeight = pool.reduce((sum, p) => sum + p.weight, 0);
+  let random = Math.random() * totalWeight;
+  for(const p of pool){
+    random -= p.weight;
+    if(random <= 0) return p;
+  }
+  return pool[pool.length - 1];
+}
+
+/* ================== 保底权重修正 ================== */
+function applyGuaranteeWeights(){
+  if(counterA >= 9){
+    const lowPrizes = PRIZES.filter(p => ["B","C","D","E","F","FF","FFF"].includes(p.level));
+    const lowTotalWeight = lowPrizes.reduce((sum, p) => sum + p.weight, 0);
+    
+    const aPrizes = PRIZES.filter(p => p.level === "A");
+    const aTotalWeight = aPrizes.reduce((sum, p) => sum + p.weight, 0);
+    
+    aPrizes.forEach(a => {
+      a.weight += lowTotalWeight * (a.weight / aTotalWeight);
+    });
+  }
+  
+  if(counterS >= 99){
+    const lowPrizes = PRIZES.filter(p => ["B","C","D","E","F","FF","FFF"].includes(p.level));
+    const lowTotalWeight = lowPrizes.reduce((sum, p) => sum + p.weight, 0);
+    
+    const sPrizes = PRIZES.filter(p => ["S","SS","SSS"].includes(p.level));
+    const sTotalWeight = sPrizes.reduce((sum, p) => sum + p.weight, 0);
+    
+    sPrizes.forEach(s => {
+      s.weight += lowTotalWeight * (s.weight / sTotalWeight);
+    });
+  }
+}
+
+/* ================== 音频系统 ================== */
+function playStartSound(){
+  try{
+    const snd = document.getElementById("start-sound");
+    snd.currentTime = 0;
+    snd.play().catch(()=>{});
+  }catch{}
+}
+
+function playStopSound(){
+  try{
+    const snd = document.getElementById("stop-sound");
+    snd.currentTime = 0;
+    snd.play().catch(()=>{});
+  }catch{}
+}
+
+/* ================== 播放单个奖品音效（只播放等级音效） ================== */
+function playPrizeAudioWithFallback(mainPrize, fallbackPrize){
+  const tryMainAudio = () => {
+    return new Promise((resolve) => {
+      const audio = new Audio(`/sounds/${mainPrize.level}.wav`);
+      
+      let played = false;
+      
+      audio.play().then(() => {
+        played = true;
+        resolve(true);
+      }).catch(() => {
+        resolve(false);
+      });
+      
+      setTimeout(() => {
+        if(!played) resolve(false);
+      }, 3000);
+    });
+  };
+  
+  const tryFallbackAudio = () => {
+    if(!fallbackPrize) return Promise.resolve(false);
+    
+    return new Promise((resolve) => {
+      const audio = new Audio(`/sounds/${fallbackPrize.level}.wav`);
+      
+      let played = false;
+      
+      audio.play().then(() => {
+        played = true;
+        resolve(true);
+      }).catch(() => {
+        resolve(false);
+      });
+      
+      setTimeout(() => {
+        if(!played) resolve(false);
+      }, 3000);
+    });
+  };
+  
+  tryMainAudio().then(success => {
+    if(!success) {
+      tryFallbackAudio();
+    }
+  });
+}
+
+/* ================== 播放多个奖品 ID 音效（不重复） ================== */
+function playPrizeIdAudios(prizeIds){
+  if(!prizeIds.length) return;
+
+  let index = 0;
+
+  function playNext(){
+    if(index >= prizeIds.length) return;
+
+    const audio = new Audio(`/sounds/${prizeIds[index]}.wav`);
+    index++;
+
+    audio.play().then(() => {
+      audio.onended = () => setTimeout(playNext, 1);
+      setTimeout(() => {
+        if(index < prizeIds.length) playNext();
+      }, 200);
+    }).catch(() => {
+      setTimeout(playNext, 1);
+    });
+  }
+
+  playNext();
+}
+
+function playNoWinAudio(){
+  try{
+    const snd = document.getElementById("no-win-sound");
+    snd.currentTime = 0;
+    snd.play().catch(()=>{});
+  }catch{}
+}
+
+function startBGM(){
+  if(bgmStarted) return;
+  const bgm = document.getElementById("bgm");
+  bgm.volume = 0.3;
+  bgm.play().then(()=>{
+    bgmStarted = true;
+  }).catch(()=>{});
+}
+
+function update(){
+  document.getElementById("money").textContent = money;
+  localStorage.setItem("money",money);
+}
+
+function showWinAlert(prize){
+  const alert = document.getElementById("win-alert");
+  alert.textContent = prize.level;
+  let color = "#fff";
+  switch(prize.level){
+    case "C": color="#44ff44"; break;
+    case "B": color="#4444ff"; break;
+    case "A": color="#aa44ff"; break;
+    case "S": color="#ffcc00"; break;
+    case "SS": color="#ffcc00"; break;
+    case "SSS": color="#ffcc00"; break;
+  }
+  alert.style.color = color;
+  alert.classList.add("show");
+  setTimeout(()=>alert.classList.remove("show"), 1500);
+}
+
+/* ================== 动画 ================== */
+function animate(strip, targetY, duration, callback){
+  const startTime = Date.now();
+  const startY = 0;  
+  function step(){
+    const progress = Math.min((Date.now() - startTime) / duration, 1);
+    strip.style.transform = `translateY(${startY + (targetY - startY) * progress}px)`;
+    if(progress < 1) requestAnimationFrame(step);
+    else callback && callback();
+  }
+  step();
+}
+
+/* ================== 视频系统 ================== */
+async function checkVideoExists(videoPath) {
+  try {
+    const response = await fetch(videoPath, { method: 'HEAD' });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function playVideo(prize) {
+  const videoPath = `/videos/${prize.id}.mp4`;
+  const videoExists = await checkVideoExists(videoPath);
+  
+  if (!videoExists) {
+    return false;
+  }
+
+  const bgm = document.getElementById("bgm");
+  bgm.pause();
+
+  const whiteFlash = document.getElementById("white-flash");
+  whiteFlash.style.opacity = '1';
+  
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  whiteFlash.style.opacity = '0';
+  
+  const overlay = document.getElementById("video-overlay");
+  const video = document.getElementById("video-player");
+  
+  overlay.style.display = 'flex';
+  video.style.display = 'block';
+  video.src = videoPath;
+  video.muted = false;
+  
+  try {
+    await video.play();
+  } catch (error) {
+    bgm.play();
+    overlay.style.display = 'none';
+    video.style.display = 'none';
+    return false;
+  }
+  
+  const closeVideo = () => {
+    video.pause();
+    overlay.style.display = 'none';
+    video.style.display = 'none';
+    video.src = '';
+    bgm.play();
+    document.removeEventListener('click', closeVideo);
+    video.removeEventListener('ended', closeVideo);
+  };
+  
+  video.addEventListener('ended', closeVideo);
+  document.addEventListener('click', closeVideo);
+  
+  return true;
+}
+
+/* ================== 单次抽奖逻辑 ================== */
+function doSingleSpin(currentMoney, forceLevel){
+  const originalWeights = PRIZES.map(p=>({id:p.id, weight:p.weight}));  
+  let currentSame = getSameByMoney(currentMoney);
+  
+  if(forceLevel){
+    applyGuaranteeWeights();
+    currentSame = 1;
+  }
+
+  const r1 = pick(null, forceLevel);
+  const r2 = Math.random()<currentSame ? r1 : pick(r1, forceLevel);
+  const r3 = Math.random()<currentSame ? r2 : pick(r2, forceLevel);
+
+  const isWin = r1.id === r2.id && r2.id === r3.id;
+
+  if(isWin && isAorAbove(r1)){
+    counterA = 0;
+  } else {
+    counterA++;
+  }
+
+  if(isWin && isSorAbove(r1)){
+    counterS = 0;
+  } else {
+    counterS++;
+  }
+
+  originalWeights.forEach(o=>{
+    const p = PRIZES.find(p=>p.id===o.id);
+    if(p) p.weight = o.weight;
+  });
+
+  return {
+    r1, r2, r3,
+    isWin,
+    winPrize: isWin ? r1 : null,
+    gold: isWin ? r1.gold : 0
+  };
+}
+
+/* ================== 10连抽结果展示 ================== */
+function show10Result(results, bestPrize){
+  const overlay = document.getElementById("result-overlay");
+  const grid = document.getElementById("result-grid");
+  grid.innerHTML = "";
+  
+  const cells = [];
+  results.forEach((r, index) => {
+    const cell = document.createElement("div");
+    cell.className = "result-cell";
+    
+    if(r.isWin){
+      const img = document.createElement("img");
+      img.className = "prize-img";
+      img.src = `/images/${r.winPrize.id}.jpg`;
+      img.onerror = ()=>{img.remove();cell.textContent=r.winPrize.id};
+      cell.appendChild(img);
+      
+      const levelSpan = document.createElement("span");
+      levelSpan.className = `level-text level-${r.winPrize.level}`;
+      levelSpan.textContent = r.winPrize.level;
+      cell.appendChild(levelSpan);
+      
+      if(["S","SS","SSS"].includes(r.winPrize.level)){
+        cell.classList.add("glow-gold");
+      } else if(r.winPrize.level === "A"){
+        cell.classList.add("glow-purple");
+      }
+    } else {
+      const d = document.createElement("span");
+      d.className = "level-text";
+      d.style.color = "#fff";
+      d.textContent = "D";
+      d.style.display = "block";
+      cell.appendChild(d);
+    }
+    
+    grid.appendChild(cell);
+    cells.push({cell, result: r});
+  });
+  
+  overlay.style.display = "flex";
+  
+  let showLevel = false;
+  cells.forEach(({cell, result}) => {
+    if(!result.isWin) return;
+    const img = cell.querySelector("img");
+    const levelText = cell.querySelector(".level-text");
+    img.style.display = "flex";
+    levelText.style.display = "none";
+  });
+  
+  const interval = setInterval(() => {
+    showLevel = !showLevel;
+    cells.forEach(({cell, result}) => {
+      if(!result.isWin) return;
+      const img = cell.querySelector("img");
+      const levelText = cell.querySelector(".level-text");
+      if(showLevel){
+        img.style.display = "none";
+        levelText.style.display = "block";
+      } else {
+        img.style.display = "flex";
+        levelText.style.display = "none";
+      }
+    });
+  }, 1333);
+  
+  window._10resultInterval = interval;
+}
+
+function hide10Result(){
+  const overlay = document.getElementById("result-overlay");
+  overlay.style.display = "none";
+  if(window._10resultInterval){
+    clearInterval(window._10resultInterval);
+    window._10resultInterval = null;
+  }
+}
+
+/* ================== SPIN ================== */
+document.getElementById("spin").onclick = async ()=>{
+  if(busy) return;
+  
+  hide10Result();
+  
+  playStartSound();
+  startBGM();
+  
+  busy=true;
+  money-=COST;
+  update();
+
+  const originalWeights = PRIZES.map(p=>({id:p.id, weight:p.weight}));
+  let currentSame = getSameByMoney(money);
+  let forceLevel = null;
+  let guaranteeTriggered = false;
+
+  if(counterS >= 99){
+    forceLevel = "S";
+    currentSame = 1;
+    guaranteeTriggered = true;
+  } else if(counterA >= 9){
+    forceLevel = "A";
+    currentSame = 1;
+    guaranteeTriggered = true;
+  }
+
+  if(guaranteeTriggered){
+    applyGuaranteeWeights();
+  }
+
+  const r1 = pick(null, forceLevel);
+  const r2 = Math.random()<currentSame ? r1 : pick(r1, forceLevel);
+  const r3 = Math.random()<currentSame ? r2 : pick(r2, forceLevel);
+
+  const isWin = r1.id === r2.id && r2.id === r3.id;
+
+  if(isWin && isAorAbove(r1)){
+    counterA = 0;
+  } else {
+    counterA++;
+  }
+
+  if(isWin && isSorAbove(r1)){
+    counterS = 0;
+  } else {
+    counterS++;
+  }
+
+  updateGuaranteeDisplay();
+  localStorage.setItem("counterA", counterA);
+  localStorage.setItem("counterS", counterS);
+
+  const ct = document.getElementById("reels");
+  ct.innerHTML = "";
+  
+  const reel1 = document.createElement("div");
+  reel1.className = "viewport";
+  const l1_2 = document.createElement("div"); l1_2.className="line-2";
+  const l1_3 = document.createElement("div"); l1_3.className="line-3";
+  reel1.appendChild(l1_2); reel1.appendChild(l1_3);
+  const strip1 = buildReel(r1, 20);
+  reel1.appendChild(strip1);
+  ct.appendChild(reel1);
+
+  const reel2 = document.createElement("div");
+  reel2.className = "viewport";
+  const l2_2 = document.createElement("div"); l2_2.className="line-2";
+  const l2_3 = document.createElement("div"); l2_3.className="line-3";
+  reel2.appendChild(l2_2); reel2.appendChild(l2_3);
+  const strip2 = buildReel(r2, 25);
+  reel2.appendChild(strip2);
+  ct.appendChild(reel2);
+
+  const reel3 = document.createElement("div");
+  reel3.className = "viewport";
+  const l3_2 = document.createElement("div"); l3_2.className="line-2";
+  const l3_3 = document.createElement("div"); l3_3.className="line-3";
+  reel3.appendChild(l3_2); reel3.appendChild(l3_3);
+  const strip3 = buildReel(r3, 30);
+  reel3.appendChild(strip3);
+  ct.appendChild(reel3);
+
+  const target1 = -(20 * H) + H;
+  const target2 = -(25 * H) + H;
+  const target3 = -(30 * H) + H;
+
+  animate(strip1, target1, 1200, () => {
+    playStopSound();
+  });
+
+  setTimeout(() => {
+    animate(strip2, target2, 1500, () => {
+      playStopSound();
+    });
+  }, 50);
+
+  setTimeout(() => {
+    animate(strip3, target3, 1800, () => {
+      playStopSound();
+    });
+  }, 100);
+
+  await new Promise(r => setTimeout(r, 2000));
+
+  let win = 0;
+  if(isWin){
+    win = r1.gold;
+    showWinAlert(r1);
+    playPrizeAudioWithFallback(r1, null);
+    await playVideo(r1);
+    document.getElementById("msg").textContent = `🎉 中奖 +${win} 金币`;
+    
+    const audio = new Audio(`/sounds/${r1.id}.wav`);
+    audio.play().catch(() => {});
+    
+    updateStats(r1.id);
+  } else {
+    document.getElementById("msg").textContent = "😅 没中";
+    playNoWinAudio();
+  }
+
+  if(win<0){
+    document.getElementById("msg").textContent = `🎉 中奖 -${-win} 金币`;
+  }
+
+  originalWeights.forEach(o=>{
+    const p = PRIZES.find(p=>p.id===o.id);
+    if(p) p.weight = o.weight;
+  });
+
+  money += win;
+  update();
+  busy=false;
+};
+
+/* ================== 十连抽 ================== */
+document.getElementById("spin10").onclick = async ()=>{
+  if(busy) return;
+  
+  hide10Result();
+  
+  playStartSound();
+  startBGM();
+  
+  busy = true;
+  money -= COST * 10;
+  update();
+
+  const results = [];
+  let totalWin = 0;
+  let bestPrize = null;
+  let worstPrize = null;
+
+  for(let i = 0; i < 10; i++){
+    let forceLevel = null;
+    
+    if(counterS >= 99){
+      forceLevel = "S";
+    } else if(counterA >= 9){
+      forceLevel = "A";
+    }
+    
+    const result = doSingleSpin(money, forceLevel);
+    results.push(result);
+    totalWin += result.gold;
+    
+    if(result.isWin){
+      bestPrize = getBestPrize(bestPrize, result.winPrize);
+      worstPrize = getWorstPrize(worstPrize, result.winPrize);
+      updateStats(result.winPrize.id);
+    }
+    
+    if(i === 0){
+      const {r1, r2, r3, isWin} = result;
+      
+      const ct = document.getElementById("reels");
+      ct.innerHTML = "";
+      
+      const reel1 = document.createElement("div");
+      reel1.className = "viewport";
+      const l1_2 = document.createElement("div"); l1_2.className="line-2";
+      const l1_3 = document.createElement("div"); l1_3.className="line-3";
+      reel1.appendChild(l1_2); reel1.appendChild(l1_3);
+      const strip1 = buildReel(r1, 20);
+      reel1.appendChild(strip1);
+      ct.appendChild(reel1);
+
+      const reel2 = document.createElement("div");
+      reel2.className = "viewport";
+      const l2_2 = document.createElement("div"); l2_2.className="line-2";
+      const l2_3 = document.createElement("div"); l2_3.className="line-3";
+      reel2.appendChild(l2_2); reel2.appendChild(l2_3);
+      const strip2 = buildReel(r2, 25);
+      reel2.appendChild(strip2);
+      ct.appendChild(reel2);
+
+      const reel3 = document.createElement("div");
+      reel3.className = "viewport";
+      const l3_2 = document.createElement("div"); l3_2.className="line-2";
+      const l3_3 = document.createElement("div"); l3_3.className="line-3";
+      reel3.appendChild(l3_2); reel3.appendChild(l3_3);
+      const strip3 = buildReel(r3, 30);
+      reel3.appendChild(strip3);
+      ct.appendChild(reel3);
+
+      const target1 = -(20 * H) + H;
+      const target2 = -(25 * H) + H;
+      const target3 = -(30 * H) + H;
+
+      animate(strip1, target1, 1200, () => {
+        playStopSound();
+      });
+
+      setTimeout(() => {
+        animate(strip2, target2, 1500, () => {
+          playStopSound();
+        });
+      }, 50);
+
+      setTimeout(() => {
+        animate(strip3, target3, 1800, () => {
+          playStopSound();
+        });
+      }, 100);
+
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
+
+  updateGuaranteeDisplay();
+  localStorage.setItem("counterA", counterA);
+  localStorage.setItem("counterS", counterS);
+
+  if(bestPrize){
+    showWinAlert(bestPrize);
+    playPrizeAudioWithFallback(bestPrize, worstPrize);
+    await playVideo(bestPrize);
+
+    const winIds = results
+      .filter(r => r.isWin)
+      .map(r => r.winPrize.id);
+
+    const uniqueWinIds = [...new Set(winIds)];
+    playPrizeIdAudios(uniqueWinIds);
+  } else {
+    playNoWinAudio();
+  }
+
+  show10Result(results, bestPrize);
+
+  const winCount = results.filter(r => r.isWin).length;
+  let msg = `十连结果：${winCount}次中奖，共${totalWin>=0?'+':''}${totalWin}金币`;
+  document.getElementById("msg").textContent = msg;
+
+  money += totalWin;
+  update();
+  busy = false;
+};
+
+/* ================== 统计按钮事件 ================== */
+document.getElementById("statsBtn").onclick = () => {
+  showStats();
+};
+
+document.addEventListener('click', (e) => {
+  if(e.target.id === "spin" || e.target.id === "spin10"){
+    hide10Result();
+  }
+});
+
+updateGuaranteeDisplay();
+</script>
+</body>
+</html>
