@@ -328,19 +328,19 @@ button{padding:10px 24px;border:none;border-radius:10px;font-size:1rem;font-weig
 </div>
 
 <audio id="bgm" loop>
-  <source src="/sounds/bg.mp3" type="audio/mpeg">
+  <source src="sounds/bg.mp3" type="audio/mpeg">
 </audio>
 
 <audio id="start-sound">
-  <source src="/sounds/start.wav" type="audio/wav">
+  <source src="sounds/start.wav" type="audio/wav">
 </audio>
 
 <audio id="stop-sound">
-  <source src="/sounds/stop.wav" type="audio/wav">
+  <source src="sounds/stop.wav" type="audio/wav">
 </audio>
 
 <audio id="no-win-sound">
-  <source src="/sounds/no_win.wav" type="audio/wav">
+  <source src="sounds/no_win.wav" type="audio/wav">
 </audio>
 
 <div id="video-overlay">
@@ -354,7 +354,7 @@ button{padding:10px 24px;border:none;border-radius:10px;font-size:1rem;font-weig
 function preloadAllImages() {
   PRIZES.forEach(p => {
     const img = new Image();
-    img.src = `/images/${p.id}.jpg`;
+    img.src = `images/${p.id}.jpg`;
   });
 }
 
@@ -519,7 +519,7 @@ function showStats() {
       html += `
         <div class="stat-item">
           <div class="stat-image">
-            <img src="/images/${prize.id}.jpg" alt="${prize.id}" onerror="this.style.display='none';this.parentNode.innerHTML+='<span style=\\'color:#666;font-size:0.8rem\\'>无图</span>'">
+            <img src="images/${prize.id}.jpg" alt="${prize.id}" onerror="this.style.display='none';this.parentNode.innerHTML+='<span style=\\'color:#666;font-size:0.8rem\\'>无图</span>'">
           </div>
           <div class="stat-count">${count}</div>
         </div>
@@ -590,7 +590,7 @@ function buildReel(targetPrize, stopIndex){
     const cell = document.createElement("div");
     cell.className = "cell";
     const img = document.createElement("img");
-    img.src = `/images/${p.id}.jpg`;
+    img.src = `images/${p.id}.jpg`;
     img.onerror = ()=>{img.remove();cell.textContent=p.id};
     cell.appendChild(img);
     strip.appendChild(cell);
@@ -663,7 +663,7 @@ function playStopSound(){
 function playPrizeAudioWithFallback(mainPrize, fallbackPrize){
   const tryMainAudio = () => {
     return new Promise((resolve) => {
-      const audio = new Audio(`/sounds/${mainPrize.level}.wav`);
+      const audio = new Audio(`sounds/${mainPrize.level}.wav`);
       
       let played = false;
       
@@ -684,7 +684,7 @@ function playPrizeAudioWithFallback(mainPrize, fallbackPrize){
     if(!fallbackPrize) return Promise.resolve(false);
     
     return new Promise((resolve) => {
-      const audio = new Audio(`/sounds/${fallbackPrize.level}.wav`);
+      const audio = new Audio(`sounds/${fallbackPrize.level}.wav`);
       
       let played = false;
       
@@ -717,7 +717,7 @@ function playPrizeIdAudios(prizeIds){
   function playNext(){
     if(index >= prizeIds.length) return;
 
-    const audio = new Audio(`/sounds/${prizeIds[index]}.wav`);
+    const audio = new Audio(`sounds/${prizeIds[index]}.wav`);
     index++;
 
     audio.play().then(() => {
@@ -796,7 +796,7 @@ async function checkVideoExists(videoPath) {
 }
 
 async function playVideo(prize) {
-  const videoPath = `/videos/${prize.id}.mp4`;
+  const videoPath = `videos/${prize.id}.mp4`;
   const videoExists = await checkVideoExists(videoPath);
   
   if (!videoExists) {
@@ -901,7 +901,7 @@ function show10Result(results, bestPrize){
     if(r.isWin){
       const img = document.createElement("img");
       img.className = "prize-img";
-      img.src = `/images/${r.winPrize.id}.jpg`;
+      img.src = `images/${r.winPrize.id}.jpg`;
       img.onerror = ()=>{img.remove();cell.textContent=r.winPrize.id};
       cell.appendChild(img);
       
@@ -1081,7 +1081,7 @@ document.getElementById("spin").onclick = async ()=>{
     await playVideo(r1);
     document.getElementById("msg").textContent = `🎉 中奖 +${win} 金币`;
     
-    const audio = new Audio(`/sounds/${r1.id}.wav`);
+    const audio = new Audio(`sounds/${r1.id}.wav`);
     audio.play().catch(() => {});
     
     updateStats(r1.id);
